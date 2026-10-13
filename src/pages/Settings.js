@@ -1,5 +1,5 @@
-import { useId, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useId, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import {
     EmailAuthProvider,
     deleteUser,
@@ -10,7 +10,7 @@ import {
     updateProfile,
 } from "firebase/auth";
 import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore";
-import { ArrowLeft, CircleCheck, Download, LogOut, TriangleAlert } from "lucide-react";
+import { ArrowLeft, CircleCheck, Clock, Download, LogOut, TriangleAlert } from "lucide-react";
 import { auth, db } from "../firebase/config";
 import { errorMessage } from "../firebase/errors";
 import { useAuth } from "../context/AuthContext";
@@ -18,6 +18,9 @@ import { useToast } from "../context/ToastContext";
 import { useTransactions } from "../utils/useFinanceData";
 import { exportCsv } from "../utils/csv";
 import { toInputDate } from "../utils/format";
+import { hasPassword, isRecentSignIn, lineErrorMessage } from "../utils/lineAuth";
+import LineButton from "../components/LineButton";
+import LineSection from "../components/LineSection";
 import Guilloche from "../components/Guilloche";
 
 // ยืนยันตัวตนด้วยรหัสผ่านอีกครั้ง (Firebase บังคับก่อนเปลี่ยนรหัส/ลบบัญชี)
@@ -53,6 +56,17 @@ export default function Settings() {
     const notify = useToast();
     const { transactions } = useTransactions(user.uid);
     const id = useId();
+    const passwordUser = hasPassword(user);
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // กลับมาจากหน้า LINE (เชื่อมบัญชี) -> แจ้งผลครั้งเดียวแล้วล้าง query
+    useEffect(() => {
+        const linked = searchParams.get("line") === "linked";
+        const lineError = lineErrorMessage(searchParams.get("line_error"));
+        if (!linked && !lineError) return;
+        notify(linked ? "เชื่อมบัญชี LINE แล้ว" : lineError, linked ? "success" : "danger");
+        setSearchParams({}, { replace: true });
+    }, [searchParams, setSearchParams, notify]);
 
     // โปรไฟล์
     const [name, setName] = useState(user.displayName || "");
@@ -112,21 +126,29 @@ export default function Settings() {
     // ลบบัญชี
     const [del, setDel] = useState({ password: "", confirm: "" });
     const [delBusy, setDelBusy] = useState(false);
+    const [needsRelogin, setNeedsRelogin] = useState(false);
     const deleteAccount = async (e) => {
         e.preventDefault();
         if (!navigator.onLine) return notify("ต้องเชื่อมต่ออินเทอร์เน็ตก่อนลบบัญชี", "danger");
         if (del.confirm !== "ลบบัญชี") return notify('กรุณาพิมพ์คำว่า "ลบบัญชี" ให้ถูกต้อง', "danger");
+        // บัญชี LINE อย่างเดียวยืนยันด้วยรหัสผ่านไม่ได้ -> ต้อง login มาไม่นาน
+        // เช็กก่อนลบอะไร ไม่งั้นข้อมูลหายแต่ลบบัญชีไม่ผ่าน
+        if (!passwordUser && !isRecentSignIn(user)) return setNeedsRelogin(true);
         try {
             setDelBusy(true);
-            await reauth(user, del.password);
+            if (passwordUser) await reauth(user, del.password);
             await deleteAllOwned("transactions", user.uid);
             await deleteAllOwned("recurring", user.uid);
+            await deleteAllOwned("lineDrafts", user.uid);
+            await deleteAllOwned("lineLinks", user.uid);
             const batch = writeBatch(db);
             batch.delete(doc(db, "budgets", user.uid));
+            batch.delete(doc(db, "lineDicts", user.uid));
             await batch.commit();
             await deleteUser(user);
             notify("ลบบัญชีและข้อมูลทั้งหมดแล้ว");
         } catch (err) {
+            if (err?.code === "auth/requires-recent-login" && !passwordUser) setNeedsRelogin(true);
             notify(errorMessage(err), "danger");
             setDelBusy(false);
         }
@@ -142,7 +164,7 @@ export default function Settings() {
                     </Link>
                 </div>
                 <h1>ตั้งค่าบัญชี</h1>
-                <p>{user.displayName ? `${user.displayName} · ${user.email}` : user.email}</p>
+                <p>{[user.displayName, user.email].filter(Boolean).join(" · ")}</p>
             </header>
 
             <Section title="โปรไฟล์">
@@ -164,89 +186,97 @@ export default function Settings() {
                     </div>
                 </form>
 
-                <div className="mt-4">
-                    <span className="form-label d-block">อีเมล</span>
-                    <div className="d-flex flex-wrap align-items-center gap-2">
-                        <span className="text-break">{user.email}</span>
-                        {user.emailVerified ? (
-                            <span className="badge-state is-ok">
-                                <CircleCheck size={15} aria-hidden="true" />
-                                ยืนยันแล้ว
-                            </span>
-                        ) : (
-                            <span className="badge-state is-warn">
-                                <TriangleAlert size={15} aria-hidden="true" />
-                                ยังไม่ยืนยัน
-                            </span>
+                {user.email && (
+                    <div className="mt-4">
+                        <span className="form-label d-block">อีเมล</span>
+                        <div className="d-flex flex-wrap align-items-center gap-2">
+                            <span className="text-break">{user.email}</span>
+                            {user.emailVerified ? (
+                                <span className="badge-state is-ok">
+                                    <CircleCheck size={15} aria-hidden="true" />
+                                    ยืนยันแล้ว
+                                </span>
+                            ) : (
+                                <span className="badge-state is-warn">
+                                    <TriangleAlert size={15} aria-hidden="true" />
+                                    ยังไม่ยืนยัน
+                                </span>
+                            )}
+                        </div>
+                        {!user.emailVerified && (
+                            <div className="d-flex flex-wrap gap-2 mt-2">
+                                <button className="btn btn-ghost btn-sm" onClick={sendVerify} disabled={sending}>
+                                    {sending ? "กำลังส่ง..." : "ส่งอีเมลยืนยัน"}
+                                </button>
+                                <button className="btn btn-quiet btn-sm" onClick={checkVerified}>
+                                    ฉันยืนยันแล้ว
+                                </button>
+                            </div>
                         )}
                     </div>
-                    {!user.emailVerified && (
-                        <div className="d-flex flex-wrap gap-2 mt-2">
-                            <button className="btn btn-ghost btn-sm" onClick={sendVerify} disabled={sending}>
-                                {sending ? "กำลังส่ง..." : "ส่งอีเมลยืนยัน"}
-                            </button>
-                            <button className="btn btn-quiet btn-sm" onClick={checkVerified}>
-                                ฉันยืนยันแล้ว
-                            </button>
-                        </div>
-                    )}
-                </div>
+                )}
             </Section>
 
-            <Section title="เปลี่ยนรหัสผ่าน">
-                <form onSubmit={changePassword} className="form-stack">
-                    {/* ช่อง username ซ่อนไว้ให้ password manager รู้ว่าบัญชีไหน */}
-                    <input type="email" autoComplete="username" value={user.email} readOnly hidden />
-                    <div>
-                        <label className="form-label" htmlFor={`${id}-pw-current`}>
-                            รหัสผ่านปัจจุบัน
-                        </label>
-                        <input
-                            id={`${id}-pw-current`}
-                            className="form-control"
-                            type="password"
-                            autoComplete="current-password"
-                            value={pw.current}
-                            onChange={(e) => setPw({ ...pw, current: e.target.value })}
-                            required
-                        />
-                    </div>
-                    <div className="form-row-2">
-                        <div>
-                            <label className="form-label" htmlFor={`${id}-pw-next`}>
-                                รหัสผ่านใหม่
-                            </label>
-                            <input
-                                id={`${id}-pw-next`}
-                                className="form-control"
-                                type="password"
-                                autoComplete="new-password"
-                                placeholder="อย่างน้อย 6 ตัว"
-                                value={pw.next}
-                                onChange={(e) => setPw({ ...pw, next: e.target.value })}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="form-label" htmlFor={`${id}-pw-confirm`}>
-                                ยืนยันรหัสผ่านใหม่
-                            </label>
-                            <input
-                                id={`${id}-pw-confirm`}
-                                className="form-control"
-                                type="password"
-                                autoComplete="new-password"
-                                value={pw.confirm}
-                                onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
-                                required
-                            />
-                        </div>
-                    </div>
-                    <button type="submit" className="btn btn-primary" disabled={pwBusy}>
-                        {pwBusy ? "กำลังบันทึก..." : "เปลี่ยนรหัสผ่าน"}
-                    </button>
-                </form>
+            <Section title="LINE">
+                <LineSection user={user} canUnlink={passwordUser} notify={notify} />
             </Section>
+
+            {passwordUser && (
+                <Section title="เปลี่ยนรหัสผ่าน">
+                    <form onSubmit={changePassword} className="form-stack">
+                        {/* ช่อง username ซ่อนไว้ให้ password manager รู้ว่าบัญชีไหน */}
+                        <input type="email" autoComplete="username" value={user.email} readOnly hidden />
+                        <div>
+                            <label className="form-label" htmlFor={`${id}-pw-current`}>
+                                รหัสผ่านปัจจุบัน
+                            </label>
+                            <input
+                                id={`${id}-pw-current`}
+                                className="form-control"
+                                type="password"
+                                autoComplete="current-password"
+                                value={pw.current}
+                                onChange={(e) => setPw({ ...pw, current: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="form-row-2">
+                            <div>
+                                <label className="form-label" htmlFor={`${id}-pw-next`}>
+                                    รหัสผ่านใหม่
+                                </label>
+                                <input
+                                    id={`${id}-pw-next`}
+                                    className="form-control"
+                                    type="password"
+                                    autoComplete="new-password"
+                                    placeholder="อย่างน้อย 6 ตัว"
+                                    value={pw.next}
+                                    onChange={(e) => setPw({ ...pw, next: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="form-label" htmlFor={`${id}-pw-confirm`}>
+                                    ยืนยันรหัสผ่านใหม่
+                                </label>
+                                <input
+                                    id={`${id}-pw-confirm`}
+                                    className="form-control"
+                                    type="password"
+                                    autoComplete="new-password"
+                                    value={pw.confirm}
+                                    onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
+                                    required
+                                />
+                            </div>
+                        </div>
+                        <button type="submit" className="btn btn-primary" disabled={pwBusy}>
+                            {pwBusy ? "กำลังบันทึก..." : "เปลี่ยนรหัสผ่าน"}
+                        </button>
+                    </form>
+                </Section>
+            )}
 
             <Section title="ข้อมูลของฉัน">
                 <p className="muted mb-3">
@@ -272,24 +302,26 @@ export default function Settings() {
 
             <Section title="ลบบัญชี" danger>
                 <p className="mb-3">
-                    ลบบัญชีและข้อมูลทั้งหมด (รายการ งบประมาณ รายการประจำ) อย่างถาวร
+                    ลบบัญชีและข้อมูลทั้งหมด (รายการ งบประมาณ รายการประจำ การเชื่อม LINE) อย่างถาวร
                     <strong> กู้คืนไม่ได้</strong> แนะนำให้ส่งออกข้อมูลเก็บไว้ก่อน
                 </p>
                 <form onSubmit={deleteAccount} className="form-stack">
-                    <div>
-                        <label className="form-label" htmlFor={`${id}-del-pw`}>
-                            รหัสผ่านปัจจุบัน
-                        </label>
-                        <input
-                            id={`${id}-del-pw`}
-                            className="form-control"
-                            type="password"
-                            autoComplete="current-password"
-                            value={del.password}
-                            onChange={(e) => setDel({ ...del, password: e.target.value })}
-                            required
-                        />
-                    </div>
+                    {passwordUser && (
+                        <div>
+                            <label className="form-label" htmlFor={`${id}-del-pw`}>
+                                รหัสผ่านปัจจุบัน
+                            </label>
+                            <input
+                                id={`${id}-del-pw`}
+                                className="form-control"
+                                type="password"
+                                autoComplete="current-password"
+                                value={del.password}
+                                onChange={(e) => setDel({ ...del, password: e.target.value })}
+                                required
+                            />
+                        </div>
+                    )}
                     <div>
                         <label className="form-label" htmlFor={`${id}-del-confirm`}>
                             พิมพ์คำว่า “ลบบัญชี” เพื่อยืนยัน
@@ -303,6 +335,17 @@ export default function Settings() {
                             required
                         />
                     </div>
+                    {needsRelogin && (
+                        <>
+                            <div className="form-error is-warn" role="status">
+                                <Clock size={16} aria-hidden="true" />
+                                <span>เพื่อความปลอดภัย กรุณาเข้าสู่ระบบด้วย LINE อีกครั้งก่อนลบบัญชี</span>
+                            </div>
+                            <LineButton returnTo="/settings" onError={(m) => notify(m, "danger")}>
+                                เข้าสู่ระบบด้วย LINE อีกครั้ง
+                            </LineButton>
+                        </>
+                    )}
                     <button
                         type="submit"
                         className="btn btn-danger w-100"

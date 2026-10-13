@@ -72,5 +72,20 @@ service cloud.firestore {
       allow read, delete: if signedIn() && request.auth.uid == uid;
       allow write: if signedIn() && request.auth.uid == uid && validBudget();
     }
+
+    // LINE: server (admin SDK) เป็นคนเขียน หน้าเว็บอ่าน/ลบได้เฉพาะของตัวเอง
+    match /lineLinks/{lineUserId} {
+      allow read, delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /lineDicts/{uid} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /lineDrafts/{id} {
+      allow read, delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // lineUsage: ไม่มี rule = หน้าเว็บอ่าน/เขียนไม่ได้ (กันลบตัวนับเพื่อหลบเกณฑ์จำกัด)
   }
 }

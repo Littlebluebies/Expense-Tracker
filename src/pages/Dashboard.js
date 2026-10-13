@@ -11,6 +11,7 @@ import { useTheme } from "../utils/theme";
 import { useMediaQuery } from "../utils/useMediaQuery";
 import { frequentItems } from "../utils/insights";
 import { monthKey, monthLabel, shiftMonth } from "../utils/format";
+import { hasPassword } from "../utils/lineAuth";
 import BudgetCard from "../components/BudgetCard";
 import MonthCompareCard from "../components/MonthCompareCard";
 import CategoryCard from "../components/CategoryCard";
@@ -266,7 +267,7 @@ export function DashboardView({
                     </div>
                 )}
 
-                {!user.emailVerified && (
+                {hasPassword(user) && !user.emailVerified && (
                     <div className="notice">
                         <Mail size={16} aria-hidden="true" />
                         <span>
