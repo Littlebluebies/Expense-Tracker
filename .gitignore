@@ -26,3 +26,6 @@ yarn-error.log*
 /.impeccable/review
 /.impeccable/mocks
 /.impeccable/questions/*.log
+
+# Vercel CLI (vercel dev / vercel link)
+.vercel

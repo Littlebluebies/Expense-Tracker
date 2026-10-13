@@ -12,6 +12,7 @@
     "bootstrap": "^5.3.8",
     "chart.js": "^4.5.1",
     "firebase": "^12.11.0",
+    "firebase-admin": "^14.5.0",
     "lucide-react": "^1.56.0",
     "react": "^19.2.4",
     "react-chartjs-2": "^5.3.1",
@@ -24,6 +25,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:server": "node --test \"api/**/*.test.mjs\"",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
