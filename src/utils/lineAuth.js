@@ -25,8 +25,11 @@ export function readLineHash(hash) {
 export const hasPassword = (user) => Boolean(user?.providerData?.some((p) => p.providerId === "password"));
 
 // Firebase ยอมให้ลบบัญชีถ้า login มาไม่เกิน 5 นาที -> เผื่อไว้ใช้ 4 นาที
+// authTime กับ issuedAtTime มาจาก server ทั้งคู่ (ไม่พึ่งนาฬิกาเครื่อง)
+// ต้องส่งผลของ getIdTokenResult(true) เพื่อให้ token ออกใหม่ตอนนี้
 const RECENT_MS = 4 * 60 * 1000;
-export function isRecentSignIn(user, now = Date.now()) {
-    const at = Date.parse(user?.metadata?.lastSignInTime || "");
-    return Number.isFinite(at) && now - at < RECENT_MS;
+export function isRecentSignIn(tokenResult) {
+    const issued = Date.parse(tokenResult?.issuedAtTime || "");
+    const auth = Date.parse(tokenResult?.authTime || "");
+    return Number.isFinite(issued) && Number.isFinite(auth) && issued - auth < RECENT_MS;
 }

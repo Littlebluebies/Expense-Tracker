@@ -9,14 +9,14 @@ const ADD_FRIEND_URL = process.env.REACT_APP_LINE_ADD_FRIEND_URL;
 
 // ส่วน "LINE" ในหน้าตั้งค่า: เชื่อม/ยกเลิกการเชื่อม และลิงก์เพิ่มเพื่อนบอท
 export default function LineSection({ user, canUnlink, notify }) {
-    const [link, setLink] = useState(undefined); // undefined = กำลังโหลด, null = ยังไม่เชื่อม
+    const [link, setLink] = useState(undefined); // undefined = กำลังโหลด, null = ยังไม่เชื่อม, "error" = โหลดไม่ได้
     const [busy, setBusy] = useState(false);
 
     useEffect(() => {
         let alive = true;
         getDocs(query(collection(db, "lineLinks"), where("userId", "==", user.uid), limit(1)))
             .then((snap) => alive && setLink(snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }))
-            .catch(() => alive && setLink(null));
+            .catch(() => alive && setLink("error"));
         return () => {
             alive = false;
         };
@@ -36,6 +36,10 @@ export default function LineSection({ user, canUnlink, notify }) {
     };
 
     if (link === undefined) return <p className="muted mb-0">กำลังโหลด...</p>;
+
+    if (link === "error") {
+        return <p className="muted mb-0">โหลดสถานะการเชื่อม LINE ไม่ได้ ลองใหม่อีกครั้งภายหลัง</p>;
+    }
 
     if (!link) {
         return (

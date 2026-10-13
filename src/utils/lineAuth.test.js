@@ -24,9 +24,12 @@ test("hasPassword is true only when the password provider is linked", () => {
 });
 
 test("isRecentSignIn uses a 4 minute window", () => {
-    const now = Date.parse("2026-10-14T05:00:00Z");
-    const at = (iso) => ({ metadata: { lastSignInTime: new Date(iso).toUTCString() } });
-    expect(isRecentSignIn(at("2026-10-14T04:57:00Z"), now)).toBe(true);
-    expect(isRecentSignIn(at("2026-10-14T04:55:00Z"), now)).toBe(false);
-    expect(isRecentSignIn({}, now)).toBe(false);
+    const tok = (auth, issued) => ({
+        authTime: new Date(auth).toUTCString(),
+        issuedAtTime: new Date(issued).toUTCString(),
+    });
+    expect(isRecentSignIn(tok("2026-10-14T04:57:00Z", "2026-10-14T05:00:00Z"))).toBe(true);
+    expect(isRecentSignIn(tok("2026-10-14T04:55:00Z", "2026-10-14T05:00:00Z"))).toBe(false);
+    expect(isRecentSignIn({})).toBe(false);
+    expect(isRecentSignIn(undefined)).toBe(false);
 });

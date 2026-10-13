@@ -133,7 +133,14 @@ export default function Settings() {
         if (del.confirm !== "ลบบัญชี") return notify('กรุณาพิมพ์คำว่า "ลบบัญชี" ให้ถูกต้อง', "danger");
         // บัญชี LINE อย่างเดียวยืนยันด้วยรหัสผ่านไม่ได้ -> ต้อง login มาไม่นาน
         // เช็กก่อนลบอะไร ไม่งั้นข้อมูลหายแต่ลบบัญชีไม่ผ่าน
-        if (!passwordUser && !isRecentSignIn(user)) return setNeedsRelogin(true);
+        if (!passwordUser) {
+            setDelBusy(true);
+            const fresh = await user.getIdTokenResult(true).then(isRecentSignIn).catch(() => false);
+            if (!fresh) {
+                setDelBusy(false);
+                return setNeedsRelogin(true);
+            }
+        }
         try {
             setDelBusy(true);
             if (passwordUser) await reauth(user, del.password);
