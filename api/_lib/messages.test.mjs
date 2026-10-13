@@ -97,6 +97,19 @@ test("summaryCard shows saved items, ask buttons for pending ones and fix/undo o
     assert.doesNotMatch(none, /a=undo/);
 });
 
+test("mixed income and expense cards show the two totals separately, never one sum", () => {
+    const salary = item({ note: "เงินเดือน", amount: 25000, type: "income", category: "salary" });
+    const d = draft([salary, item()], { date: TODAY, status: "awaitingDate" });
+    const card = dateCard(ID, d, TODAY);
+    assert.match(card.altText, /2 รายการ · รายรับ 25,000 · รายจ่าย 50 บาท/);
+    assert.doesNotMatch(str(card), /รวม 25,050/);
+
+    const saved = draft([{ ...salary, state: "saved", txId: "t2" }, { ...item(), state: "saved", txId: "t1" }], { status: "open", date: TODAY });
+    const summary = str(summaryCard(ID, saved, TODAY));
+    assert.match(summary, /รายรับ 25,000 · รายจ่าย 50 บาท/);
+    assert.doesNotMatch(summary, /รวม 25,050/);
+});
+
 test("monthSummaryMessage shows totals, budget use and a web button", () => {
     const under = str(monthSummaryMessage({ today: TODAY, income: 3000, expense: 5000, budget: 10000, webUrl: "https://app.test" }));
     assert.match(under, /สรุป ต\.ค\. 2569/);

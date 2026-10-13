@@ -98,6 +98,13 @@ export const limitMessage = (decision, webUrl) =>
 const noteOf = (it) => it.note || "(ไม่มีชื่อ)";
 const signed = (it) => `${it.type === "income" ? "+" : ""}${baht(it.amount)}`;
 const sumOf = (items) => items.reduce((sum, it) => sum + it.amount, 0);
+// รายรับกับรายจ่ายรวมกันไม่ได้ จึงแยกยอดเมื่อมีทั้งสองแบบในข้อความเดียว
+const totalText = (items) => {
+    const income = items.filter((it) => it.type === "income");
+    const expense = items.filter((it) => it.type !== "income");
+    if (income.length && expense.length) return `รายรับ ${baht(sumOf(income))} · รายจ่าย ${baht(sumOf(expense))} บาท`;
+    return `รวม ${baht(sumOf(items))} บาท`;
+};
 const categoryText = (it) => (it.category ? categoryOf(it.category)?.label ?? it.category : "? ยังไม่รู้หมวด");
 const itemRow = (it) => ({
     type: "box",
@@ -111,7 +118,7 @@ const ignoredLine = (draft) =>
     draft.ignored ? [text(`ไม่ได้บันทึก: “${draft.ignored}” (ไม่มีจำนวนเงิน)`, { size: "xs", color: MUTED })] : [];
 
 export function dateCard(draftId, draft, today) {
-    const title = `${draft.items.length} รายการ · รวม ${baht(sumOf(draft.items))} บาท`;
+    const title = `${draft.items.length} รายการ · ${totalText(draft.items)}`;
     const body = [
         text(title, { weight: "bold" }),
         ...draft.items.map(itemRow),
@@ -140,7 +147,7 @@ export function summaryCard(draftId, draft, today) {
     const saved = draft.items.filter((it) => it.state === "saved");
     const when = dateLabel(draft.date, today);
     const title = saved.length
-        ? `✓ บันทึกแล้ว ${saved.length} รายการ · ${when} · รวม ${baht(sumOf(saved))} บาท`
+        ? `✓ บันทึกแล้ว ${saved.length} รายการ · ${when} · ${totalText(saved)}`
         : `รอเลือกหมวด · ${when}`;
     const body = [text(title, { weight: "bold" })];
     draft.items.forEach((it, i) => {
