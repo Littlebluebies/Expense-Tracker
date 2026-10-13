@@ -1804,6 +1804,39 @@ button.cat-row:hover .row-label {
   color: var(--ink-2);
 }
 
+/* ปุ่ม LINE: เขียวของ LINE (#06C755) ตัวหนังสือสีเข้มคงที่ทั้งโหมดสว่าง/มืด
+   (ขาวบนเขียวนี้ contrast แค่ ~2.3:1 ไม่ผ่าน WCAG ส่วนสีเข้มนี้ได้ ~7.5:1) */
+.btn-line {
+  --bs-btn-color: #08240f;
+  --bs-btn-bg: #06c755;
+  --bs-btn-border-color: #06c755;
+  --bs-btn-hover-color: #08240f;
+  --bs-btn-hover-bg: #05b84e;
+  --bs-btn-hover-border-color: #05b84e;
+  --bs-btn-active-color: #08240f;
+  --bs-btn-active-bg: #04a847;
+  --bs-btn-active-border-color: #04a847;
+  --bs-btn-disabled-color: #08240f;
+  --bs-btn-disabled-bg: #06c755;
+  --bs-btn-disabled-border-color: #06c755;
+  --bs-btn-disabled-opacity: 0.6;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--rule);
+}
+
 @media (min-width: 992px) {
   .auth {
     display: grid;
