@@ -1,13 +1,11 @@
-import { useState } from "react";
-import {
-    createUserWithEmailAndPassword,
-    sendEmailVerification,
-    updateProfile,
-} from "firebase/auth";
+import { useId, useState } from "react";
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
+import { OctagonAlert } from "lucide-react";
 import { auth } from "../firebase/config";
 import { errorMessage } from "../firebase/errors";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import AuthShell from "../components/AuthShell";
 
 export default function Register() {
     const [username, setUsername] = useState("");
@@ -17,6 +15,7 @@ export default function Register() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const { refresh } = useAuth();
+    const id = useId();
 
     const handleRegister = async (e) => {
         e.preventDefault();
@@ -37,11 +36,7 @@ export default function Register() {
 
         try {
             setLoading(true);
-            const { user } = await createUserWithEmailAndPassword(
-                auth,
-                email.trim(),
-                password
-            );
+            const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password);
             await updateProfile(user, { displayName: username.trim() });
             // ให้ Dashboard แสดงชื่อทันที (onAuthStateChanged ยิงไปก่อนตั้งชื่อเสร็จ)
             refresh();
@@ -55,56 +50,88 @@ export default function Register() {
     };
 
     return (
-        <div className="container d-flex justify-content-center align-items-center min-vh-100 py-4">
-            <form className="card p-4 shadow auth-card" onSubmit={handleRegister}>
-                <h3 className="text-center mb-3 fw-bold">สมัครสมาชิก</h3>
+        <AuthShell>
+            <form className="auth-form form-stack" onSubmit={handleRegister}>
+                <div>
+                    <h2>สมัครสมาชิก</h2>
+                    <p className="muted mb-0">ใช้ฟรี ไม่มีโฆษณา เข้าใช้ได้ทันทีหลังสมัคร</p>
+                </div>
 
-                {error && <div className="alert alert-danger py-2 small">{error}</div>}
+                {error && (
+                    <div className="form-error" role="alert">
+                        <OctagonAlert size={16} aria-hidden="true" />
+                        <span>{error}</span>
+                    </div>
+                )}
 
-                <input
-                    className="form-control mb-2"
-                    placeholder="ชื่อผู้ใช้"
-                    autoComplete="nickname"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                />
-                <input
-                    className="form-control mb-2"
-                    type="email"
-                    placeholder="อีเมล"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                />
-                <input
-                    className="form-control mb-2"
-                    type="password"
-                    placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)"
-                    autoComplete="new-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
-                <input
-                    className="form-control mb-3"
-                    type="password"
-                    placeholder="ยืนยันรหัสผ่าน"
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                />
+                <div>
+                    <label className="form-label" htmlFor={`${id}-name`}>
+                        ชื่อผู้ใช้
+                    </label>
+                    <input
+                        id={`${id}-name`}
+                        className="form-control"
+                        autoComplete="nickname"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="form-label" htmlFor={`${id}-email`}>
+                        อีเมล
+                    </label>
+                    <input
+                        id={`${id}-email`}
+                        className="form-control"
+                        type="email"
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="form-label" htmlFor={`${id}-password`}>
+                        รหัสผ่าน
+                    </label>
+                    <input
+                        id={`${id}-password`}
+                        className="form-control"
+                        type="password"
+                        autoComplete="new-password"
+                        aria-describedby={`${id}-password-hint`}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
+                    <p className="form-hint" id={`${id}-password-hint`}>
+                        อย่างน้อย 6 ตัวอักษร
+                    </p>
+                </div>
+                <div>
+                    <label className="form-label" htmlFor={`${id}-confirm`}>
+                        ยืนยันรหัสผ่าน
+                    </label>
+                    <input
+                        id={`${id}-confirm`}
+                        className="form-control"
+                        type="password"
+                        autoComplete="new-password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                    />
+                </div>
 
-                <button type="submit" className="btn btn-success w-100" disabled={loading}>
+                <button type="submit" className="btn btn-primary w-100" disabled={loading}>
                     {loading ? "กำลังสร้างบัญชี..." : "สมัครสมาชิก"}
                 </button>
 
-                <p className="text-center mt-3 mb-0">
+                <p className="auth-switch">
                     มีบัญชีอยู่แล้ว? <Link to="/">เข้าสู่ระบบ</Link>
                 </p>
             </form>
-        </div>
+        </AuthShell>
     );
 }

@@ -1,123 +1,52 @@
-import { Bar, Doughnut } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 import {
     Chart as ChartJS,
-    ArcElement,
     BarController,
     BarElement,
     CategoryScale,
-    Legend,
     LinearScale,
     LineController,
     LineElement,
     PointElement,
     Tooltip,
 } from "chart.js";
-import { EXPENSE_CATEGORIES, getCategory } from "../constants/categories";
-import { formatMoney, monthLabel, shiftMonth } from "../utils/format";
+import { formatMoney, monthLabel, parseMonthKey, shiftMonth } from "../utils/format";
 
 ChartJS.register(
-    ArcElement,
     BarController,
     BarElement,
     CategoryScale,
-    Legend,
     LinearScale,
     LineController,
     LineElement,
     PointElement,
     Tooltip
 );
+ChartJS.defaults.font.family = "Anuphan, 'Noto Sans Thai', sans-serif";
 
-// ชุดสีที่ผ่านการตรวจ color-blind แล้ว (light / dark) เรียงตามลำดับตายตัว
-const PALETTE = {
-    light: ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"],
-    dark: ["#3987e5", "#d95926", "#199e70", "#c98500", "#d55181", "#008300", "#9085e9", "#e66767"],
-};
-
+// เดือนที่เลือกพิมพ์หมึกเต็ม เดือนอื่นถอยเป็นสีจาง เดือนที่เกินงบใช้หมึกแดง
 const THEME = {
-    light: { surface: "#ffffff", text: "#52514e", grid: "#e8e7e3", neutral: "#8a8984" },
-    dark: { surface: "#212529", text: "#c3c2b7", grid: "#3a3a37", neutral: "#8a8984" },
+    light: {
+        bar: "#1f5e3d",
+        barTint: "rgba(31, 94, 61, 0.28)",
+        over: "#b2303a",
+        overTint: "rgba(178, 48, 58, 0.32)",
+        line: "#535b4f",
+        grid: "#d3d8cc",
+        text: "#535b4f",
+        tooltip: "#1c211b",
+    },
+    dark: {
+        bar: "#5fb886",
+        barTint: "rgba(95, 184, 134, 0.3)",
+        over: "#f07d84",
+        overTint: "rgba(240, 125, 132, 0.32)",
+        line: "#a3ae9f",
+        grid: "#26302a",
+        text: "#a3ae9f",
+        tooltip: "#e4e9e1",
+    },
 };
-
-// สีผูกกับหมวด (ไม่ใช่อันดับ) -> หมวดเดิมได้สีเดิมเสมอ, "อื่นๆ" เป็นสีเทา
-const categoryColor = (key, mode) => {
-    const idx = EXPENSE_CATEGORIES.findIndex((c) => c.key === key);
-    if (key === "other" || idx < 0 || idx >= PALETTE[mode].length) return THEME[mode].neutral;
-    return PALETTE[mode][idx];
-};
-
-export function CategoryChart({ totals, mode }) {
-    const t = THEME[mode];
-    const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-    const total = entries.reduce((s, [, v]) => s + v, 0);
-
-    if (entries.length === 0) {
-        return (
-            <div className="card app-card p-3 mb-3">
-                <h6 className="mb-2">📊 รายจ่ายตามหมวด</h6>
-                <p className="text-body-secondary small mb-0">ยังไม่มีรายจ่ายในเดือนนี้</p>
-            </div>
-        );
-    }
-
-    const data = {
-        labels: entries.map(([k]) => getCategory(k).label),
-        datasets: [
-            {
-                data: entries.map(([, v]) => v),
-                backgroundColor: entries.map(([k]) => categoryColor(k, mode)),
-                borderColor: t.surface,
-                borderWidth: 2,
-                hoverOffset: 4,
-            },
-        ],
-    };
-
-    return (
-        <div className="card app-card p-3 mb-3">
-            <h6 className="mb-3">📊 รายจ่ายตามหมวด</h6>
-            <div className="row align-items-center g-3">
-                <div className="col-5">
-                    <Doughnut
-                        data={data}
-                        options={{
-                            cutout: "62%",
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    callbacks: {
-                                        label: (ctx) =>
-                                            ` ${formatMoney(ctx.parsed)} (${Math.round((ctx.parsed / total) * 100)}%)`,
-                                    },
-                                },
-                            },
-                        }}
-                    />
-                </div>
-                <div className="col-7">
-                    {/* legend + ตัวเลข (อ่านได้โดยไม่ต้องพึ่งสี) */}
-                    {entries.map(([k, v]) => (
-                        <div key={k} className="d-flex align-items-center small mb-1">
-                            <span
-                                className="legend-dot me-2"
-                                style={{ background: categoryColor(k, mode) }}
-                            />
-                            <span className="flex-fill text-truncate">
-                                {getCategory(k).icon} {getCategory(k).label}
-                            </span>
-                            <span className="ms-2 text-nowrap">
-                                {formatMoney(v)}{" "}
-                                <span className="text-body-secondary">
-                                    {Math.round((v / total) * 100)}%
-                                </span>
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
 
 // รายจ่ายรายเดือน (ย้อนหลัง 6 เดือนจนถึงเดือนที่เลือก) เทียบกับงบของแต่ละเดือน
 export function MonthlyChart({ transactions, month, budgetFor, mode, onSelectMonth }) {
@@ -134,19 +63,22 @@ export function MonthlyChart({ transactions, month, budgetFor, mode, onSelectMon
     const expenses = months.map((m) => expenseByMonth[m]);
     const budgets = months.map((m) => budgetFor(m) || null);
     const hasBudget = budgets.some((b) => b);
+    const over = months.map((m, i) => budgets[i] && expenses[i] > budgets[i]);
 
     const data = {
-        labels: months.map((m) => monthLabel(m, "short")),
+        labels: months.map((m) => parseMonthKey(m).toLocaleDateString("th-TH", { month: "short" })),
         datasets: [
             {
                 type: "bar",
                 label: "รายจ่าย",
                 data: expenses,
-                backgroundColor: months.map((m) =>
-                    m === month ? PALETTE[mode][0] : `${PALETTE[mode][0]}80`
-                ),
-                borderRadius: 4,
-                maxBarThickness: 36,
+                backgroundColor: months.map((m, i) => {
+                    const selected = m === month;
+                    if (over[i]) return selected ? t.over : t.overTint;
+                    return selected ? t.bar : t.barTint;
+                }),
+                borderRadius: 3,
+                maxBarThickness: 34,
                 order: 2,
             },
             ...(hasBudget
@@ -155,11 +87,12 @@ export function MonthlyChart({ transactions, month, budgetFor, mode, onSelectMon
                           type: "line",
                           label: "งบประมาณ",
                           data: budgets,
-                          borderColor: t.neutral,
-                          backgroundColor: t.neutral,
-                          borderWidth: 2,
-                          borderDash: [6, 4],
-                          pointRadius: 4,
+                          borderColor: t.line,
+                          backgroundColor: t.line,
+                          borderWidth: 1.5,
+                          borderDash: [5, 4],
+                          pointRadius: 0,
+                          pointHoverRadius: 3,
                           stepped: "middle",
                           spanGaps: true,
                           order: 1,
@@ -169,10 +102,19 @@ export function MonthlyChart({ transactions, month, budgetFor, mode, onSelectMon
         ],
     };
 
+    const summary = months
+        .map((m, i) => `${monthLabel(m, "short")} ${formatMoney(expenses[i])}${over[i] ? " (เกินงบ)" : ""}`)
+        .join(", ");
+
     return (
-        <div className="card app-card p-3 mb-3">
-            <h6 className="mb-2">📈 รายจ่ายรายเดือน (6 เดือน)</h6>
-            <div style={{ height: 220 }}>
+        <section className="panel" aria-labelledby="monthly-title">
+            <div className="panel-head mb-1">
+                <h2 className="panel-title" id="monthly-title">
+                    รายจ่ายรายเดือน
+                </h2>
+                <span className="panel-meta">6 เดือน</span>
+            </div>
+            <div style={{ height: 210 }} role="img" aria-label={`รายจ่าย 6 เดือน: ${summary}`}>
                 <Bar
                     data={data}
                     options={{
@@ -182,35 +124,45 @@ export function MonthlyChart({ transactions, month, budgetFor, mode, onSelectMon
                         onClick: (_, elements) => {
                             if (elements.length) onSelectMonth(months[elements[0].index]);
                         },
+                        onHover: (e, elements) => {
+                            if (e.native?.target) e.native.target.style.cursor = elements.length ? "pointer" : "default";
+                        },
                         plugins: {
-                            legend: {
-                                display: hasBudget,
-                                labels: { color: t.text, boxWidth: 12, usePointStyle: true },
-                            },
+                            legend: { display: false },
                             tooltip: {
+                                backgroundColor: t.tooltip,
+                                titleColor: mode === "dark" ? "#1c211b" : "#f1f5ef",
+                                bodyColor: mode === "dark" ? "#1c211b" : "#f1f5ef",
+                                footerColor: mode === "dark" ? "#1c211b" : "#f1f5ef",
+                                padding: 10,
+                                cornerRadius: 8,
+                                displayColors: false,
                                 callbacks: {
                                     title: (items) => monthLabel(months[items[0].dataIndex]),
-                                    label: (ctx) => ` ${ctx.dataset.label}: ${formatMoney(ctx.parsed.y)}`,
-                                    afterBody: (items) => {
+                                    label: (ctx) => `${ctx.dataset.label}: ${formatMoney(ctx.parsed.y)}`,
+                                    footer: (items) => {
                                         const i = items[0].dataIndex;
                                         const b = budgets[i];
                                         if (!b) return "";
                                         const diff = b - expenses[i];
-                                        return diff >= 0
-                                            ? `คงเหลือ ${formatMoney(diff)}`
-                                            : `⛔ เกินงบ ${formatMoney(-diff)}`;
+                                        return diff >= 0 ? `คงเหลือ ${formatMoney(diff)}` : `เกินงบ ${formatMoney(-diff)}`;
                                     },
                                 },
                             },
                         },
                         scales: {
-                            x: { grid: { display: false }, ticks: { color: t.text } },
+                            x: {
+                                grid: { display: false },
+                                border: { color: t.grid },
+                                ticks: { color: t.text, font: { size: 12 } },
+                            },
                             y: {
                                 beginAtZero: true,
                                 grid: { color: t.grid },
                                 border: { display: false },
                                 ticks: {
                                     color: t.text,
+                                    font: { size: 11 },
                                     maxTicksLimit: 5,
                                     callback: (v) => Number(v).toLocaleString("th-TH"),
                                 },
@@ -219,7 +171,25 @@ export function MonthlyChart({ transactions, month, budgetFor, mode, onSelectMon
                     }}
                 />
             </div>
-            <small className="text-body-secondary">แตะที่แท่งกราฟเพื่อดูเดือนนั้น</small>
-        </div>
+            <div className="chart-legend" aria-hidden="true">
+                <span>
+                    <i />
+                    รายจ่าย
+                </span>
+                {hasBudget && (
+                    <span>
+                        <i className="is-line" />
+                        งบ
+                    </span>
+                )}
+                {over.some(Boolean) && (
+                    <span>
+                        <i className="is-over" />
+                        เกินงบ
+                    </span>
+                )}
+            </div>
+            <p className="form-hint">แตะแท่งกราฟเพื่อไปดูเดือนนั้น</p>
+        </section>
     );
 }

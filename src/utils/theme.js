@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 
 const KEY = "theme";
 
+// สีแถบสถานะของมือถือ ให้ตรงกับแถบหัวสีเขียวของแต่ละโหมด
+const BAR_COLOR = { light: "#1f5e3d", dark: "#133a27" };
+
 const readTheme = () => {
     try {
         const saved = localStorage.getItem(KEY);
@@ -16,6 +19,7 @@ const readTheme = () => {
 
 export const applyTheme = (theme = readTheme()) => {
     document.documentElement.setAttribute("data-bs-theme", theme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", BAR_COLOR[theme]);
     return theme;
 };
 

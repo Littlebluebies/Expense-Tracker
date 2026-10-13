@@ -21,3 +21,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# impeccable: ภาพหน้าจอที่ใช้ตรวจ และภาพร่างทิศทางดีไซน์ (ไม่ต้องเก็บใน repo)
+/.impeccable/review
+/.impeccable/mocks
+/.impeccable/questions/*.log

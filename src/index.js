@@ -1,6 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import "bootstrap/dist/css/bootstrap.min.css";
+// ฟอนต์อยู่ในเครื่อง (bundle ไปกับแอป) -> ออฟไลน์ก็ยังแสดงฟอนต์ถูก
+import "@fontsource/anuphan/400.css";
+import "@fontsource/anuphan/500.css";
+import "@fontsource/anuphan/600.css";
+import "@fontsource/anuphan/700.css";
+import "@fontsource/trirong/500.css";
+import "@fontsource/trirong/600.css";
 import './index.css';
 import App from './App';
 import { applyTheme } from './utils/theme';

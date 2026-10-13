@@ -1,12 +1,12 @@
-import { useState } from "react";
-import {
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-} from "firebase/auth";
+import { useId, useState } from "react";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { CircleCheck, Clock, OctagonAlert } from "lucide-react";
 import { auth } from "../firebase/config";
 import { errorMessage } from "../firebase/errors";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import AuthShell from "../components/AuthShell";
+import Sheet from "../components/Sheet";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -14,6 +14,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { expired } = useAuth();
+  const id = useId();
 
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -39,7 +40,7 @@ export default function Login() {
     try {
       setLoading(true);
       await sendPasswordResetEmail(auth, resetEmail.trim());
-      setResetMsg({ ok: true, text: "📩 ส่งลิงก์รีเซ็ตรหัสผ่านไปที่อีเมลแล้ว" });
+      setResetMsg({ ok: true, text: "ส่งลิงก์รีเซ็ตรหัสผ่านไปที่อีเมลแล้ว" });
     } catch (err) {
       setResetMsg({ ok: false, text: errorMessage(err) });
     } finally {
@@ -54,92 +55,111 @@ export default function Login() {
   };
 
   return (
-    <>
-      <div className="container d-flex justify-content-center align-items-center min-vh-100 py-4">
-        <form className="card p-4 shadow auth-card" onSubmit={handleLogin}>
-          <div className="text-center mb-3">
-            <div className="fs-1">💸</div>
-            <h3 className="fw-bold mb-0">เข้าสู่ระบบ</h3>
-            <small className="text-body-secondary">บันทึกรายรับ-รายจ่ายของคุณ</small>
+    <AuthShell>
+      <form className="auth-form form-stack" onSubmit={handleLogin}>
+        <div>
+          <h2>เข้าสู่ระบบ</h2>
+          <p className="muted mb-0">บันทึกรายรับ-รายจ่ายของคุณ</p>
+        </div>
+
+        {error && (
+          <div className="form-error" role="alert">
+            <OctagonAlert size={16} aria-hidden="true" />
+            <span>{error}</span>
           </div>
+        )}
+        {!error && expired && (
+          <div className="form-error is-warn" role="status">
+            <Clock size={16} aria-hidden="true" />
+            <span>เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง</span>
+          </div>
+        )}
 
-          {error && <div className="alert alert-danger py-2 small">{error}</div>}
-          {!error && expired && (
-            <div className="alert alert-warning py-2 small">
-              ⏱️ เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง
-            </div>
-          )}
-
+        <div>
+          <label className="form-label" htmlFor={`${id}-email`}>
+            อีเมล
+          </label>
           <input
-            className="form-control mb-2"
+            id={`${id}-email`}
+            className="form-control"
             type="email"
             autoComplete="email"
-            placeholder="อีเมล"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
+        </div>
 
+        <div>
+          <div className="d-flex justify-content-between align-items-baseline">
+            <label className="form-label" htmlFor={`${id}-password`}>
+              รหัสผ่าน
+            </label>
+            <button type="button" className="btn btn-link small" onClick={openReset}>
+              ลืมรหัสผ่าน?
+            </button>
+          </div>
           <input
-            className="form-control mb-2"
+            id={`${id}-password`}
+            className="form-control"
             type="password"
             autoComplete="current-password"
-            placeholder="รหัสผ่าน"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+        </div>
 
-          <div className="text-end mb-2">
-            <button type="button" className="btn btn-link p-0 small" onClick={openReset}>
-              ลืมรหัสผ่าน?
-            </button>
-          </div>
+        <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+          {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+        </button>
 
-          <button type="submit" className="btn btn-primary w-100" disabled={loading}>
-            {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-          </button>
+        <p className="auth-switch">
+          ยังไม่มีบัญชี? <Link to="/register">สมัครสมาชิก</Link>
+        </p>
+      </form>
 
-          <p className="text-center mt-3 mb-0">
-            ยังไม่มีบัญชี? <Link to="/register">สมัครสมาชิก</Link>
-          </p>
-        </form>
-      </div>
+      <Sheet open={showReset} onClose={() => setShowReset(false)} title="รีเซ็ตรหัสผ่าน" center>
+        <form className="form-stack" onSubmit={handleResetPassword}>
+          <p className="muted mb-0">ใส่อีเมลที่ใช้สมัคร ระบบจะส่งลิงก์ตั้งรหัสผ่านใหม่ไปให้</p>
 
-      {showReset && (
-        <div className="app-modal-backdrop" onClick={() => setShowReset(false)}>
-          <form
-            className="card p-4 shadow app-modal"
-            onSubmit={handleResetPassword}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h5 className="mb-3 text-center">รีเซ็ตรหัสผ่าน</h5>
+          {resetMsg && (
+            <div className={`form-error ${resetMsg.ok ? "is-ok" : ""}`} role="status">
+              {resetMsg.ok ? (
+                <CircleCheck size={16} aria-hidden="true" />
+              ) : (
+                <OctagonAlert size={16} aria-hidden="true" />
+              )}
+              <span>{resetMsg.text}</span>
+            </div>
+          )}
 
-            {resetMsg && (
-              <div className={`alert py-2 small ${resetMsg.ok ? "alert-success" : "alert-danger"}`}>
-                {resetMsg.text}
-              </div>
-            )}
-
+          <div>
+            <label className="form-label" htmlFor={`${id}-reset`}>
+              อีเมลที่ใช้สมัคร
+            </label>
             <input
-              className="form-control mb-3"
+              id={`${id}-reset`}
+              className="form-control"
               type="email"
-              placeholder="อีเมลที่ใช้สมัคร"
+              autoComplete="email"
               value={resetEmail}
               onChange={(e) => setResetEmail(e.target.value)}
               required
-              autoFocus
+              data-autofocus
             />
+          </div>
 
-            <button type="submit" className="btn btn-primary w-100 mb-2" disabled={loading}>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary" disabled={loading}>
               {loading ? "กำลังส่ง..." : "ส่งลิงก์รีเซ็ต"}
             </button>
-            <button type="button" className="btn btn-secondary w-100" onClick={() => setShowReset(false)}>
+            <button type="button" className="btn btn-ghost" onClick={() => setShowReset(false)}>
               ปิด
             </button>
-          </form>
-        </div>
-      )}
-    </>
+          </div>
+        </form>
+      </Sheet>
+    </AuthShell>
   );
 }

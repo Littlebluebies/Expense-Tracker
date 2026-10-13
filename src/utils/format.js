@@ -3,7 +3,9 @@ const moneyFormatter = new Intl.NumberFormat("th-TH", {
     maximumFractionDigits: 2,
 });
 
-export const formatMoney = (n) => `${moneyFormatter.format(n || 0)} ฿`;
+export const formatNumber = (n) => moneyFormatter.format(n || 0);
+
+export const formatMoney = (n) => `${formatNumber(n)} ฿`;
 
 // Firestore Timestamp | Date | string -> Date
 export const toDate = (value) => {
@@ -46,9 +48,9 @@ export const toInputDate = (date) =>
 // "YYYY-MM-DD" -> Date เที่ยงวันเวลาท้องถิ่น (กันปัญหา timezone เลื่อนวัน)
 export const fromInputDate = (str) => new Date(`${str}T12:00:00`);
 
-// สถานะงบ: ใช้ไอคอน + ข้อความคู่กับสีเสมอ (ไม่พึ่งสีอย่างเดียว)
+// สถานะงบ: แสดงไอคอน + ข้อความคู่กับสีเสมอ (ไม่พึ่งสีอย่างเดียว) ดู components/StatusLabel.js
 export const budgetStatus = (percent) => {
-    if (percent > 100) return { cls: "danger", icon: "⛔", text: "เกินงบแล้ว" };
-    if (percent >= 80) return { cls: "warning", icon: "⚠️", text: "ใกล้เต็มงบ" };
-    return { cls: "success", icon: "✅", text: "อยู่ในงบ" };
+    if (percent > 100) return { tone: "over", text: "เกินงบแล้ว" };
+    if (percent >= 80) return { tone: "near", text: "ใกล้เต็มงบ" };
+    return { tone: "ok", text: "อยู่ในงบ" };
 };

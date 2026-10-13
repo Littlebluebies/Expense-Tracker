@@ -1,19 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { ChevronLeft, ChevronRight, Mail, Moon, Plus, Settings, Sun, TriangleAlert, WifiOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { addTransaction, deleteTransaction } from "../firebase/transactions";
+import { getCategory } from "../constants/categories";
 import { useBudgets, useTransactions } from "../utils/useFinanceData";
 import { useRecurring } from "../utils/useRecurring";
 import { useTheme } from "../utils/theme";
+import { useMediaQuery } from "../utils/useMediaQuery";
 import { frequentItems } from "../utils/insights";
-import { formatMoney, monthKey, monthLabel, shiftMonth } from "../utils/format";
+import { monthKey, monthLabel, shiftMonth } from "../utils/format";
 import BudgetCard from "../components/BudgetCard";
 import MonthCompareCard from "../components/MonthCompareCard";
-import CategoryBudgetCard from "../components/CategoryBudgetCard";
+import CategoryCard from "../components/CategoryCard";
 import RecurringCard from "../components/RecurringCard";
 import TransactionForm from "../components/TransactionForm";
 import TransactionList from "../components/TransactionList";
-import { CategoryChart, MonthlyChart } from "../components/Charts";
+import QuickChips from "../components/QuickChips";
+import Sheet from "../components/Sheet";
+import Money from "../components/Money";
+import Guilloche, { RosetteMark } from "../components/Guilloche";
+import { MonthlyChart } from "../components/Charts";
 
 function useOnline() {
     const [online, setOnline] = useState(navigator.onLine);
@@ -32,18 +40,50 @@ function useOnline() {
 export default function Dashboard() {
     const { user } = useAuth();
     const [theme, toggleTheme] = useTheme();
-
     const notify = useToast();
 
     const { transactions, loading, error } = useTransactions(user.uid);
     const { items: recurringItems } = useRecurring(user.uid, transactions, !loading, notify);
     const online = useOnline();
-
     const { budgets, budgetFor } = useBudgets(user.uid);
 
+    return (
+        <DashboardView
+            user={user}
+            theme={theme}
+            toggleTheme={toggleTheme}
+            notify={notify}
+            transactions={transactions}
+            loading={loading}
+            error={error}
+            recurringItems={recurringItems}
+            online={online}
+            budgets={budgets}
+            budgetFor={budgetFor}
+        />
+    );
+}
+
+// หน้าจอล้วน (รับข้อมูลทาง props) แยกจากการโหลดข้อมูลด้านบน
+export function DashboardView({
+    user,
+    theme,
+    toggleTheme,
+    notify,
+    transactions,
+    loading,
+    error,
+    recurringItems,
+    online,
+    budgets,
+    budgetFor,
+}) {
+    const wide = useMediaQuery("(min-width: 992px)");
     const currentMonth = monthKey(new Date());
     const [month, setMonth] = useState(currentMonth);
     const [editing, setEditing] = useState(null);
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const [categoryFilter, setCategoryFilter] = useState(null);
 
     const monthTx = useMemo(
         () => transactions.filter((t) => t.monthKey === month),
@@ -71,114 +111,176 @@ export default function Dashboard() {
     const quickItems = useMemo(() => frequentItems(transactions), [transactions]);
 
     const budget = budgetFor(month);
-    const isCustomBudget =
-        budgets.monthly[month] !== undefined && budgets.monthly[month] !== null;
+    const isCustomBudget = budgets.monthly[month] !== undefined && budgets.monthly[month] !== null;
+    const balance = income - expense;
+
+    // จด/แก้ไข ใช้ทางเดียวกันทุกขนาดจอ: แถบล่าง (มือถือ) หรือท้ายคอลัมน์ซ้าย (คอม) -> เปิด Sheet
+    const openAdd = () => {
+        setEditing(null);
+        setSheetOpen(true);
+    };
 
     const startEdit = (t) => {
         setEditing(t);
-        document
-            .getElementById("transaction-form")
-            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        setSheetOpen(true);
+    };
+
+    // ลบทันที แล้วกด "เลิกทำ" ใน toast ได้
+    const removeEditing = (t) => {
+        deleteTransaction(t, notify);
+        setSheetOpen(false);
+        setEditing(null);
     };
 
     // หลังบันทึก: ถ้ารายการอยู่คนละเดือน ให้สลับไปเดือนนั้น
     const handleFormDone = (savedDate) => {
         setEditing(null);
+        setSheetOpen(false);
         if (savedDate) setMonth(monthKey(savedDate));
+    };
+
+    const closeSheet = () => {
+        setSheetOpen(false);
+        setEditing(null);
     };
 
     const changeMonth = (key) => {
         setEditing(null);
+        setCategoryFilter(null);
         setMonth(key);
     };
 
+    // จดด่วน: แตะครั้งเดียวลงรายการวันนี้เลย
+    const quickAdd = (item) => {
+        const label = item.note || getCategory(item.category).label;
+        addTransaction(
+            user.uid,
+            {
+                amount: item.amount,
+                type: item.type,
+                category: item.category,
+                note: item.note,
+                date: new Date(),
+            },
+            notify,
+            `เพิ่ม "${label}" แล้ว`
+        );
+        handleFormDone(new Date());
+    };
+
+    const pickCategory = (key) => {
+        const next = categoryFilter === key ? null : key;
+        setCategoryFilter(next);
+        if (next) document.getElementById("ledger")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
     return (
-        <div className="app-bg min-vh-100">
-            <div className="app-container py-3">
-                {/* Header */}
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <div className="min-w-0">
-                        <div className="fw-semibold text-truncate">
-                            สวัสดี, {user.displayName || user.email}
+        <div className="dash">
+            <div className="dash-side">
+                <header className="band dash-band">
+                    <Guilloche />
+                    <div className="band-top">
+                        <span className="wordmark">
+                            <RosetteMark />
+                            รายจ่าย
+                        </span>
+                        <div className="band-actions">
+                            <button
+                                className="btn band-ctl icon-btn"
+                                onClick={toggleTheme}
+                                aria-label={theme === "dark" ? "เปลี่ยนเป็นโหมดสว่าง" : "เปลี่ยนเป็นโหมดมืด"}
+                                title={theme === "dark" ? "โหมดสว่าง" : "โหมดมืด"}
+                            >
+                                {theme === "dark" ? (
+                                    <Sun size={18} aria-hidden="true" />
+                                ) : (
+                                    <Moon size={18} aria-hidden="true" />
+                                )}
+                            </button>
+                            <Link
+                                to="/settings"
+                                className="btn band-ctl icon-btn"
+                                aria-label={`ตั้งค่าบัญชี (${user.displayName || user.email})`}
+                                title="ตั้งค่าบัญชี"
+                            >
+                                <Settings size={18} aria-hidden="true" />
+                            </Link>
                         </div>
                     </div>
-                    <div className="d-flex gap-2 flex-shrink-0">
-                        <button
-                            className="btn btn-sm btn-outline-secondary"
-                            onClick={toggleTheme}
-                            aria-label="สลับธีม"
-                        >
-                            {theme === "dark" ? "☀️" : "🌙"}
-                        </button>
-                        <Link
-                            to="/settings"
-                            className="btn btn-sm btn-outline-secondary"
-                            aria-label="ตั้งค่าบัญชี"
-                            title="ตั้งค่าบัญชี"
-                        >
-                            ⚙️
-                        </Link>
-                    </div>
-                </div>
 
-                {/* เลือกเดือน */}
-                <div className="d-flex align-items-center justify-content-between mb-3">
-                    <button
-                        className="btn btn-outline-secondary"
-                        onClick={() => changeMonth(shiftMonth(month, -1))}
-                        aria-label="เดือนก่อนหน้า"
-                    >
-                        ‹
-                    </button>
-                    <div className="text-center">
-                        <div className="fw-bold fs-5">{monthLabel(month)}</div>
-                        {month !== currentMonth && (
-                            <button
-                                className="btn btn-link btn-sm p-0"
-                                onClick={() => changeMonth(currentMonth)}
-                            >
-                                กลับไปเดือนปัจจุบัน
-                            </button>
+                    <nav className="month-nav" aria-label="เลือกเดือน">
+                        <button
+                            className="btn band-ctl icon-btn"
+                            onClick={() => changeMonth(shiftMonth(month, -1))}
+                            aria-label="เดือนก่อนหน้า"
+                        >
+                            <ChevronLeft size={20} aria-hidden="true" />
+                        </button>
+                        <div>
+                            <h1>{monthLabel(month)}</h1>
+                            {month !== currentMonth && (
+                                <button className="btn btn-link" onClick={() => changeMonth(currentMonth)}>
+                                    กลับไปเดือนปัจจุบัน
+                                </button>
+                            )}
+                        </div>
+                        <button
+                            className="btn band-ctl icon-btn"
+                            onClick={() => changeMonth(shiftMonth(month, 1))}
+                            disabled={month >= currentMonth}
+                            aria-label="เดือนถัดไป"
+                        >
+                            <ChevronRight size={20} aria-hidden="true" />
+                        </button>
+                    </nav>
+
+                    <div className={`balance ${balance < 0 ? "is-negative" : ""}`}>
+                        <span className="band-label">
+                            {month === currentMonth ? "คงเหลือเดือนนี้" : `คงเหลือ ${monthLabel(month, "short")}`}
+                        </span>
+                        {loading ? (
+                            <span className="money money-xl" aria-label="กำลังโหลด">
+                                …
+                            </span>
+                        ) : (
+                            <Money value={balance} size="xl" />
                         )}
                     </div>
-                    <button
-                        className="btn btn-outline-secondary"
-                        onClick={() => changeMonth(shiftMonth(month, 1))}
-                        disabled={month >= currentMonth}
-                        aria-label="เดือนถัดไป"
-                    >
-                        ›
-                    </button>
-                </div>
+
+                    <div className="flow">
+                        <div>
+                            <span className="band-label">รายรับ</span>
+                            <Money value={income} signed size="md" />
+                        </div>
+                        <div>
+                            <span className="band-label">รายจ่าย</span>
+                            <Money value={-expense} size="md" />
+                        </div>
+                    </div>
+                </header>
 
                 {!online && (
-                    <div className="alert alert-warning small py-2">
-                        📴 ออฟไลน์อยู่ — จดรายการได้ตามปกติ ข้อมูลจะซิงค์เมื่อกลับมาออนไลน์
+                    <div className="notice is-warn" role="status">
+                        <WifiOff size={16} aria-hidden="true" />
+                        <span>ออฟไลน์อยู่ จดรายการได้ตามปกติ ข้อมูลจะซิงค์เมื่อกลับมาออนไลน์</span>
                     </div>
                 )}
 
                 {!user.emailVerified && (
-                    <div className="alert alert-info small py-2">
-                        📧 ยังไม่ได้ยืนยันอีเมล — <Link to="/settings">ยืนยันที่หน้าตั้งค่า</Link>{" "}
-                        (ช่วยให้กู้รหัสผ่านได้แน่นอน)
+                    <div className="notice">
+                        <Mail size={16} aria-hidden="true" />
+                        <span>
+                            ยังไม่ได้ยืนยันอีเมล <Link to="/settings">ยืนยันที่หน้าตั้งค่า</Link> ช่วยให้กู้รหัสผ่านได้แน่นอน
+                        </span>
                     </div>
                 )}
 
-                {error && <div className="alert alert-danger small">{error}</div>}
-
-                {/* สรุปยอดเดือน */}
-                <div className="wallet-card p-4 mb-3 text-white">
-                    <small className="opacity-75">คงเหลือเดือนนี้ (รายรับ − รายจ่าย)</small>
-                    <h2 className="fw-bold my-1">
-                        {loading ? "…" : formatMoney(income - expense)}
-                    </h2>
-                    <div className="d-flex justify-content-between mt-2 small">
-                        <span>⬆️ รายรับ {formatMoney(income)}</span>
-                        <span>⬇️ รายจ่าย {formatMoney(expense)}</span>
+                {error && (
+                    <div className="notice is-danger" role="alert">
+                        <TriangleAlert size={16} aria-hidden="true" />
+                        <span>{error}</span>
                     </div>
-                </div>
-
-                <MonthCompareCard transactions={transactions} month={month} />
+                )}
 
                 <BudgetCard
                     key={month}
@@ -191,25 +293,43 @@ export default function Dashboard() {
                     notify={notify}
                 />
 
-                <TransactionForm
-                    uid={user.uid}
-                    editing={editing}
-                    onDone={handleFormDone}
-                    notify={notify}
-                    quickItems={quickItems}
-                />
+                <div className={`dock ${quickItems.length ? "" : "is-solo"}`}>
+                    <div className="dock-inner">
+                        {quickItems.length > 0 && <QuickChips items={quickItems} onPick={quickAdd} />}
+                        <button className="btn btn-primary" onClick={openAdd}>
+                            <Plus size={18} aria-hidden="true" />
+                            จดรายการ
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                <CategoryBudgetCard
+            <main className="dash-main">
+                <TransactionList
+                    key={month}
+                    transactions={monthTx}
+                    month={month}
+                    loading={loading}
+                    editingId={editing?.id}
+                    onEdit={startEdit}
+                    compact={!wide}
+                    categoryFilter={categoryFilter}
+                    onClearCategory={() => setCategoryFilter(null)}
+                />
+            </main>
+
+            <aside className="dash-aside" aria-label="สรุปเดือน">
+                <MonthCompareCard transactions={transactions} month={month} />
+
+                <CategoryCard
                     uid={user.uid}
                     limits={budgets.categories}
                     spent={categoryTotals}
                     monthBudget={budget}
                     notify={notify}
+                    activeKey={categoryFilter}
+                    onPick={pickCategory}
                 />
-
-                <RecurringCard uid={user.uid} items={recurringItems} notify={notify} />
-
-                <CategoryChart totals={categoryTotals} mode={theme} />
 
                 <MonthlyChart
                     transactions={transactions}
@@ -219,14 +339,19 @@ export default function Dashboard() {
                     onSelectMonth={changeMonth}
                 />
 
-                <TransactionList
-                    transactions={monthTx}
-                    month={month}
-                    editingId={editing?.id}
-                    onEdit={startEdit}
+                <RecurringCard uid={user.uid} items={recurringItems} notify={notify} />
+            </aside>
+
+            <Sheet open={sheetOpen} onClose={closeSheet} title={editing ? "แก้ไขรายการ" : "จดรายการ"}>
+                <TransactionForm
+                    uid={user.uid}
+                    editing={editing}
+                    onDone={handleFormDone}
+                    onCancel={closeSheet}
+                    onDelete={removeEditing}
                     notify={notify}
                 />
-            </div>
+            </Sheet>
         </div>
     );
 }

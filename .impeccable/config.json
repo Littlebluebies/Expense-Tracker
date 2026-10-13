@@ -1,0 +1,35 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/model-pick.html"
+        ],
+        "createdAt": "2026-10-13T11:53:56.840Z",
+        "reason": "assistant decided: throwaway decision-page sketch of the unchosen calendar direction; never ships"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/model-pick.html"
+        ],
+        "createdAt": "2026-10-13T12:06:02.736Z",
+        "reason": "assistant decided: unchosen decision-page sketch; font belongs to that rejected direction and never ships"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/challenger-gateboard.html"
+        ],
+        "createdAt": "2026-10-13T12:06:02.932Z",
+        "reason": "assistant decided: unchosen decision-page sketch; font belongs to that rejected direction and never ships"
+      }
+    ]
+  }
+}

@@ -5,11 +5,13 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
+import { RosetteMark } from "./components/Guilloche";
 
 function Loading() {
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100">
-      <div className="spinner-border text-primary" role="status" />
+    <div className="app-loading" role="status" aria-label="กำลังโหลด">
+      <RosetteMark size={36} />
+      <span className="bar" />
     </div>
   );
 }

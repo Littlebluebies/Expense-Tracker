@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase/config";
 import { commit } from "../firebase/write";
 import { addTransaction } from "../firebase/transactions";
-import {
-    EXPENSE_CATEGORIES,
-    INCOME_CATEGORIES,
-    getCategory,
-} from "../constants/categories";
-import { formatMoney, fromInputDate, toInputDate } from "../utils/format";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "../constants/categories";
+import { fromInputDate, toInputDate } from "../utils/format";
+import CategoryPicker from "./CategoryPicker";
+import Segmented from "./Segmented";
 
 const emptyForm = () => ({
     type: "expense",
@@ -18,8 +17,18 @@ const emptyForm = () => ({
     note: "",
 });
 
-export default function TransactionForm({ uid, editing, onDone, notify, quickItems = [] }) {
+const TYPES = [
+    { value: "expense", label: "รายจ่าย" },
+    { value: "income", label: "รายรับ", className: "is-income" },
+];
+
+export default function TransactionForm({ uid, editing, onDone, onCancel, onDelete, notify }) {
     const [form, setForm] = useState(emptyForm);
+    const id = useId();
+
+    const now = new Date();
+    const today = toInputDate(now);
+    const yesterday = toInputDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1));
 
     // เปิดโหมดแก้ไข -> เติมค่าลงฟอร์ม
     useEffect(() => {
@@ -44,8 +53,6 @@ export default function TransactionForm({ uid, editing, onDone, notify, quickIte
             type,
             category: (type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES)[0].key,
         }));
-
-    const categories = form.type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
     const submit = (e) => {
         e.preventDefault();
@@ -78,125 +85,122 @@ export default function TransactionForm({ uid, editing, onDone, notify, quickIte
         onDone(fromInputDate(form.date));
     };
 
-    // จดด่วน: กดครั้งเดียวลงรายการวันนี้เลย
-    const quickAdd = (item) => {
-        const label = item.note || getCategory(item.category).label;
-        addTransaction(
-            uid,
-            {
-                amount: item.amount,
-                type: item.type,
-                category: item.category,
-                note: item.note,
-                date: new Date(),
-            },
-            notify,
-            `เพิ่ม "${label}" แล้ว`
-        );
-        onDone(new Date());
-    };
-
     return (
-        <form className="card app-card p-3 mb-3" onSubmit={submit} id="transaction-form">
-            <h6 className="mb-2">{editing ? "✏️ แก้ไขรายการ" : "➕ เพิ่มรายการ"}</h6>
+        <form className="form-stack" onSubmit={submit} id="transaction-form" noValidate>
+            <Segmented
+                label="ประเภท"
+                value={form.type}
+                onChange={changeType}
+                options={TYPES}
+                block
+            />
 
-            {!editing && quickItems.length > 0 && (
-                <div className="mb-3">
-                    <small className="text-body-secondary d-block mb-1">⚡ จดด่วน (วันนี้)</small>
-                    <div className="d-flex flex-wrap gap-2">
-                        {quickItems.map((item) => (
+            <div>
+                <label className="form-label" htmlFor={`${id}-amount`}>
+                    จำนวนเงิน
+                </label>
+                <div className="field-money is-large">
+                    <input
+                        id={`${id}-amount`}
+                        className="form-control"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        placeholder="0"
+                        value={form.amount}
+                        data-autofocus
+                        onChange={(e) => {
+                            const v = e.target.value.replace(/,/g, "");
+                            if (/^\d*\.?\d{0,2}$/.test(v)) set("amount", v);
+                        }}
+                    />
+                    <span className="unit" aria-hidden="true">
+                        ฿
+                    </span>
+                </div>
+            </div>
+
+            <div>
+                <span className="form-label d-block">หมวดหมู่</span>
+                <CategoryPicker
+                    type={form.type}
+                    value={form.category}
+                    onChange={(v) => set("category", v)}
+                />
+            </div>
+
+            <div>
+                <label className="form-label" htmlFor={`${id}-note`}>
+                    บันทึก <span className="fw-normal">(ไม่บังคับ)</span>
+                </label>
+                <input
+                    id={`${id}-note`}
+                    className="form-control"
+                    placeholder="เช่น ข้าวกลางวัน"
+                    maxLength={100}
+                    value={form.note}
+                    onChange={(e) => set("note", e.target.value)}
+                />
+            </div>
+
+            <div>
+                <div className="d-flex justify-content-between align-items-center gap-2 mb-1">
+                    <label className="form-label mb-0" htmlFor={`${id}-date`}>
+                        วันที่
+                    </label>
+                    <div className="date-picks" role="group" aria-label="เลือกวันที่ด่วน">
+                        {[
+                            ["วันนี้", today],
+                            ["เมื่อวาน", yesterday],
+                        ].map(([label, value]) => (
                             <button
-                                key={item.key}
+                                key={label}
                                 type="button"
-                                className="btn btn-sm btn-outline-secondary quick-chip"
-                                onClick={() => quickAdd(item)}
+                                className="date-pick"
+                                aria-pressed={form.date === value}
+                                onClick={() => set("date", value)}
                             >
-                                {getCategory(item.category).icon}{" "}
-                                <span className="text-truncate">
-                                    {item.note || getCategory(item.category).label}
-                                </span>{" "}
-                                <span className={item.type === "income" ? "text-success" : "text-danger"}>
-                                    {item.type === "income" ? "+" : "−"}
-                                    {formatMoney(item.amount)}
-                                </span>
+                                {label}
                             </button>
                         ))}
                     </div>
                 </div>
-            )}
-
-            <div className="btn-group w-100 mb-2" role="group">
-                <button
-                    type="button"
-                    className={`btn ${form.type === "expense" ? "btn-danger" : "btn-outline-danger"}`}
-                    onClick={() => changeType("expense")}
-                >
-                    รายจ่าย
-                </button>
-                <button
-                    type="button"
-                    className={`btn ${form.type === "income" ? "btn-success" : "btn-outline-success"}`}
-                    onClick={() => changeType("income")}
-                >
-                    รายรับ
-                </button>
-            </div>
-
-            <div className="input-group mb-2">
                 <input
-                    className="form-control form-control-lg"
-                    inputMode="decimal"
-                    placeholder="จำนวนเงิน"
-                    value={form.amount}
-                    onChange={(e) => {
-                        const v = e.target.value.replace(/,/g, "");
-                        if (/^\d*\.?\d{0,2}$/.test(v)) set("amount", v);
-                    }}
+                    id={`${id}-date`}
+                    type="date"
+                    className="form-control"
+                    value={form.date}
+                    max={today}
+                    aria-describedby={`${id}-date-th`}
+                    onChange={(e) => set("date", e.target.value)}
                 />
-                <span className="input-group-text">฿</span>
+                {form.date && (
+                    <p className="form-hint" id={`${id}-date-th`}>
+                        {fromInputDate(form.date).toLocaleDateString("th-TH", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                        })}
+                    </p>
+                )}
             </div>
 
-            <div className="row g-2 mb-2">
-                <div className="col-7">
-                    <select
-                        className="form-select"
-                        value={form.category}
-                        onChange={(e) => set("category", e.target.value)}
-                        aria-label="หมวดหมู่"
-                    >
-                        {categories.map((c) => (
-                            <option key={c.key} value={c.key}>
-                                {c.icon} {c.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="col-5">
-                    <input
-                        type="date"
-                        className="form-control"
-                        value={form.date}
-                        max={toInputDate(new Date())}
-                        onChange={(e) => set("date", e.target.value)}
-                        aria-label="วันที่"
-                    />
-                </div>
-            </div>
-
-            <input
-                className="form-control mb-2"
-                placeholder="บันทึกเพิ่มเติม (ไม่บังคับ) เช่น ข้าวกลางวัน"
-                maxLength={100}
-                value={form.note}
-                onChange={(e) => set("note", e.target.value)}
-            />
-
-            <div className="d-flex gap-2">
-                <button type="submit" className="btn btn-primary flex-fill">
+            <div className="form-actions">
+                <button type="submit" className="btn btn-primary">
                     {editing ? "บันทึกการแก้ไข" : "เพิ่มรายการ"}
                 </button>
-                {editing && (
-                    <button type="button" className="btn btn-secondary" onClick={() => onDone()}>
+                {editing && onDelete && (
+                    <button type="button" className="btn btn-danger-ghost" onClick={() => onDelete(editing)}>
+                        <Trash2 size={16} aria-hidden="true" />
+                        ลบ
+                    </button>
+                )}
+                {(editing || onCancel) && (
+                    <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => (onCancel ? onCancel() : onDone())}
+                    >
                         ยกเลิก
                     </button>
                 )}

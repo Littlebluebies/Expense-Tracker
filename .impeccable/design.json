@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T00:00:00Z",
+  "title": "Design System: รายจ่าย (Expense Tracker)",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Fibre Paper", "canonical": "#eef0ea", "darkValue": "#0e1411", "tonalRamp": ["#1c211b", "#353c33", "#535b4f", "#7a8374", "#a3ab9c", "#c9cfc1", "#e3e7de", "#f4f6f1"] },
+      "paper-sunk": { "role": "neutral", "displayName": "Sunk Paper", "canonical": "#e3e7de", "darkValue": "#18201b" },
+      "sheet": { "role": "neutral", "displayName": "Sheet", "canonical": "#f8f9f5", "darkValue": "#141b17" },
+      "rule": { "role": "neutral", "displayName": "Hairline", "canonical": "#d3d8cc", "darkValue": "#26302a" },
+      "rule-strong": { "role": "neutral", "displayName": "Strong Hairline", "canonical": "#b6beae", "darkValue": "#3a473f" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#1c211b", "darkValue": "#e4e9e1" },
+      "ink-2": { "role": "neutral", "displayName": "Second Ink", "canonical": "#535b4f", "darkValue": "#a3ae9f" },
+      "band": { "role": "primary", "displayName": "Twenty-Baht Green (band)", "canonical": "#1f5e3d", "darkValue": "#133a27", "tonalRamp": ["#0b2216", "#133a27", "#1f5e3d", "#2f7d4f", "#5fb886", "#9fc2ab", "#cfe6d6", "#eef6f0"] },
+      "primary": { "role": "primary", "displayName": "Twenty-Baht Green (action)", "canonical": "#1f5e3d", "darkValue": "#2f7d4f", "tonalRamp": ["#0b2216", "#133a27", "#184c31", "#1f5e3d", "#2f7d4f", "#37905c", "#74c99a", "#cfe6d6"] },
+      "income": { "role": "primary", "displayName": "Ledger Green", "canonical": "#1f6b43", "darkValue": "#74c99a" },
+      "ok": { "role": "primary", "displayName": "In-Budget Green", "canonical": "#2f7d4f", "darkValue": "#5fb886" },
+      "danger": { "role": "secondary", "displayName": "Hundred-Baht Red", "canonical": "#b2303a", "darkValue": "#f07d84", "tonalRamp": ["#3d0f13", "#6a1b21", "#95262f", "#b2303a", "#d4545d", "#f07d84", "#f5b5b9", "#fbe4e5"] },
+      "warn-fill": { "role": "secondary", "displayName": "Thousand-Baht Gold (fill)", "canonical": "#c49a2c", "darkValue": "#c49a2c", "tonalRamp": ["#3a2c06", "#5e470d", "#8a6914", "#c49a2c", "#e0b64f", "#f0c862", "#f6dfa0", "#fbf1d6"] },
+      "warn": { "role": "secondary", "displayName": "Thousand-Baht Gold (text)", "canonical": "#8a6914", "darkValue": "#e0b64f" },
+      "note-20": { "role": "tertiary", "displayName": "20 Note Green", "canonical": "#2f7d4f", "fixedAcrossThemes": true },
+      "note-50": { "role": "tertiary", "displayName": "Fifty-Baht Blue", "canonical": "#2c5f9e", "fixedAcrossThemes": true, "tonalRamp": ["#0f2138", "#1a3a61", "#244f86", "#2c5f9e", "#4f82c2", "#8db4ea", "#c4d8f4", "#eaf1fb"] },
+      "note-100": { "role": "tertiary", "displayName": "100 Note Red", "canonical": "#b2303a", "fixedAcrossThemes": true },
+      "note-500": { "role": "tertiary", "displayName": "Five-Hundred Purple", "canonical": "#6b3f8c", "fixedAcrossThemes": true, "tonalRamp": ["#251530", "#3f2552", "#553270", "#6b3f8c", "#8c63ab", "#ad8ec6", "#d3c2e1", "#f0e9f5"] },
+      "note-1000": { "role": "tertiary", "displayName": "Thousand-Baht Khaki", "canonical": "#7a6e5f", "fixedAcrossThemes": true, "tonalRamp": ["#28241f", "#433c33", "#5f5649", "#7a6e5f", "#988d7f", "#b7aea2", "#d6d0c8", "#f1eeea"] },
+      "tint-green": { "role": "primary", "displayName": "Green Wash", "canonical": "rgba(31, 94, 61, 0.1)", "darkValue": "rgba(116, 201, 154, 0.12)" }
+    },
+    "typographyMeta": {
+      "money-xl": { "displayName": "Money XL", "purpose": "Month balance on the band; one per screen." },
+      "money-lg": { "displayName": "Money LG", "purpose": "Today's allowance figure." },
+      "money-md": { "displayName": "Money MD", "purpose": "Budget spent, income/expense pair, sheet totals." },
+      "money-sm": { "displayName": "Money SM", "purpose": "Default amount in rows, categories and chips." },
+      "headline": { "displayName": "Headline", "purpose": "Auth band heading (2.5rem on desktop); Settings 1.375rem; auth form title 1.5rem." },
+      "title": { "displayName": "Title", "purpose": "Panel titles, month name; sheet titles at 1.125rem." },
+      "body": { "displayName": "Body", "purpose": "Rows, buttons, notices; inputs at 1rem." },
+      "label": { "displayName": "Label", "purpose": "Form labels, meta, captions, day headers." }
+    },
+    "shadows": [
+      { "name": "dock", "value": "0 -6px 20px rgba(28, 33, 27, 0.06)", "purpose": "Fixed bottom dock on phones." },
+      { "name": "dock-side", "value": "0 -10px 18px rgba(28, 33, 27, 0.07)", "purpose": "Dock pinned at the foot of the desktop side column." },
+      { "name": "sheet", "value": "0 -10px 40px rgba(0, 0, 0, 0.2)", "purpose": "Bottom sheet and dialog; backdrop rgba(14, 20, 17, 0.45)." },
+      { "name": "toast", "value": "0 8px 28px rgba(0, 0, 0, 0.28)", "purpose": "Inverse toast." },
+      { "name": "note-edge", "value": "0 1px 0 rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12)", "purpose": "Paper edge of a banknote chip." },
+      { "name": "segment-thumb", "value": "0 1px 2px rgba(28, 33, 27, 0.12)", "purpose": "Checked segment in a segmented control." },
+      { "name": "shadow-lift", "value": "0 1px 2px rgba(28, 33, 27, 0.08), 0 6px 18px rgba(28, 33, 27, 0.08)", "darkValue": "0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35)", "purpose": "Declared lift token; reserve for floating surfaces." },
+      { "name": "focus-field", "value": "0 0 0 3px var(--tint-green)", "purpose": "Field and checkbox focus ring alongside an ink border." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "All entrances and the meter fill." },
+      { "name": "note-deal", "value": "420ms ease-out-expo, stagger 55ms", "purpose": "Note chips slide in from -14px with -6deg tilt." },
+      { "name": "sheet-in", "value": "260ms ease-out-expo", "purpose": "Mobile bottom sheet rises 40px." },
+      { "name": "pop-in", "value": "220ms ease-out-expo", "purpose": "Centred dialog from 8px, scale 0.98." },
+      { "name": "toast-in", "value": "240ms ease-out-expo", "purpose": "Toast rises 12px." },
+      { "name": "meter-fill", "value": "width 400ms ease-out-expo", "purpose": "Budget meter fill." },
+      { "name": "state", "value": "150ms ease", "purpose": "Colour, border and background state changes." },
+      { "name": "press", "value": "translateY(1px), 100ms", "purpose": "Button and chip press." },
+      { "name": "reduced-motion", "value": "0.01ms", "purpose": "prefers-reduced-motion collapses all animation and transitions." }
+    ],
+    "breakpoints": [
+      { "name": "sheet-dialog", "value": "576px" },
+      { "name": "desktop-two-column", "value": "992px" },
+      { "name": "desktop-three-column", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one primary action per view: add entry, save, sign in.",
+      "html": "<button class=\"ds-btn ds-btn-primary\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>จดรายการ</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 44px; padding: 0.6rem 1rem; border-radius: 10px; font-family: Anuphan, 'Noto Sans Thai', system-ui, sans-serif; font-weight: 600; font-size: 0.9375rem; line-height: 1.4; border: 1px solid transparent; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease; } .ds-btn:active { transform: translateY(1px); } .ds-btn:focus-visible { outline: 2px solid #1c211b; outline-offset: 2px; } .ds-btn-primary { background: #1f5e3d; border-color: #1f5e3d; color: #fff; } .ds-btn-primary:hover { background: #184c31; border-color: #184c31; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Secondary actions: edit, CSV, cancel.",
+      "html": "<button class=\"ds-btn-ghost\">แก้ไข</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; min-height: 36px; padding: 0.35rem 0.75rem; border-radius: 8px; font-family: Anuphan, 'Noto Sans Thai', sans-serif; font-weight: 600; font-size: 0.8125rem; background: transparent; color: #1c211b; border: 1px solid #b6beae; cursor: pointer; transition: background-color 0.15s ease; } .ds-btn-ghost:hover { background: #e3e7de; } .ds-btn-ghost:focus-visible { outline: 2px solid #1c211b; outline-offset: 2px; }"
+    },
+    {
+      "name": "Money Field",
+      "kind": "input",
+      "refersTo": "input-money-large",
+      "description": "Amount entry in the add sheet: engraved serif, trailing baht unit.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-label\">จำนวนเงิน</span><span class=\"ds-money-field\"><input value=\"60\" inputmode=\"decimal\"><span class=\"ds-unit\">฿</span></span></label>",
+      "css": ".ds-field { display: block; max-width: 320px; } .ds-label { display: block; font-family: Anuphan, sans-serif; font-size: 0.8125rem; font-weight: 600; color: #535b4f; margin-bottom: 0.3rem; } .ds-money-field { position: relative; display: block; } .ds-money-field input { width: 100%; box-sizing: border-box; min-height: 64px; padding: 0.35rem 2.4rem 0.35rem 0.8rem; font-family: Trirong, Anuphan, serif; font-weight: 600; font-size: 2rem; font-variant-numeric: lining-nums tabular-nums; color: #1c211b; background: #f8f9f5; border: 1px solid #b6beae; border-radius: 10px; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; } .ds-money-field input:focus { border-color: #1c211b; box-shadow: 0 0 0 3px rgba(31, 94, 61, 0.1); } .ds-unit { position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%); font-family: Trirong, serif; font-size: 1.25rem; color: #535b4f; }"
+    },
+    {
+      "name": "Quick Chip",
+      "kind": "chip",
+      "refersTo": "quick-chip",
+      "description": "One-tap repeat entry in the dock.",
+      "html": "<button class=\"ds-quick-chip\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\"><path d=\"M17 8h1a4 4 0 1 1 0 8h-1\"/><path d=\"M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z\"/></svg><span>กาแฟ</span><span class=\"ds-money\">60<span class=\"ds-money-unit\">฿</span></span></button>",
+      "css": ".ds-quick-chip { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 40px; padding: 0 0.85rem 0 0.6rem; border-radius: 999px; border: 1px solid #b6beae; background: #f8f9f5; color: #1c211b; font-family: Anuphan, sans-serif; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease; } .ds-quick-chip svg { color: #535b4f; } .ds-quick-chip:hover { border-color: #535b4f; background: #e3e7de; } .ds-quick-chip:active { transform: translateY(1px); } .ds-quick-chip:focus-visible { outline: 2px solid #1c211b; outline-offset: 2px; } .ds-money { font-family: Trirong, Anuphan, serif; font-weight: 600; font-variant-numeric: lining-nums tabular-nums; } .ds-money-unit { font-size: 0.62em; margin-left: 0.18em; font-weight: 500; }"
+    },
+    {
+      "name": "Note Chips",
+      "kind": "custom",
+      "refersTo": "note-chip",
+      "description": "Signature: today's allowance counted out as fanned banknote chips in fixed note inks.",
+      "html": "<div class=\"ds-notes\"><span class=\"ds-note n100\" style=\"--r:-3deg;--i:0\">100</span><span class=\"ds-note n100\" style=\"--r:1.5deg;--i:1\">100</span><span class=\"ds-note n20 gap\" style=\"--r:-1deg;--i:2\">20</span><span class=\"ds-note n20\" style=\"--r:2.5deg;--i:3\">20</span></div>",
+      "css": ".ds-notes { display: flex; align-items: center; padding: 6px 0 10px 4px; } .ds-note { --w: 64px; position: relative; width: var(--w); height: 34px; margin-left: calc(var(--w) * -0.5); border-radius: 4px; color: #fff; font-family: Trirong, Anuphan, serif; font-weight: 600; font-size: 0.8125rem; line-height: 1; padding: 5px 7px; box-sizing: border-box; box-shadow: 0 1px 0 rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.12); transform: rotate(var(--r, 0deg)); animation: ds-deal 0.42s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: calc(var(--i, 0) * 55ms); } .ds-note:first-child { margin-left: 0; } .ds-note.gap { margin-left: calc(var(--w) * -0.12); } .ds-note::before { content: ''; position: absolute; inset: 3px; border: 1px solid rgba(255,255,255,0.4); border-radius: 2px; } .ds-note::after { content: ''; position: absolute; right: 7px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,0.34) 0 45%, rgba(255,255,255,0.12) 46% 100%); } .n20 { background: #2f7d4f; } .n100 { background: #b2303a; } @keyframes ds-deal { from { opacity: 0; transform: translateX(-14px) rotate(-6deg); } }"
+    },
+    {
+      "name": "Budget Meter",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "Budget health: ink fill by tone, ink pace marker, icon+text status.",
+      "html": "<div class=\"ds-meter-wrap\"><div class=\"ds-meter\"><span class=\"ds-fill\" style=\"width:69%\"></span><span class=\"ds-pace\" style=\"left:42%\"></span></div><div class=\"ds-caption\"><span>ใช้ไป 69% ของงบ</span><span class=\"ds-ok\">อยู่ในงบ</span></div></div>",
+      "css": ".ds-meter-wrap { max-width: 360px; font-family: Anuphan, sans-serif; } .ds-meter { position: relative; height: 10px; margin: 0.85rem 0 0.5rem; border-radius: 3px; background: #e3e7de; box-shadow: inset 0 0 0 1px #d3d8cc; } .ds-fill { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: #2f7d4f; transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1); } .ds-pace { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: #1c211b; border-radius: 1px; } .ds-caption { display: flex; justify-content: space-between; font-size: 0.8125rem; color: #535b4f; } .ds-ok { color: #2f7d4f; font-weight: 600; }"
+    },
+    {
+      "name": "Ledger Row",
+      "kind": "card",
+      "refersTo": "category-tile",
+      "description": "Ruled ledger row: category tile, label and sub-line, right-aligned engraved amount.",
+      "html": "<button class=\"ds-row\"><span class=\"ds-tile\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\"><rect x=\"3\" y=\"6\" width=\"18\" height=\"12\" rx=\"2\"/><path d=\"M3 12h18\"/></svg></span><span class=\"ds-lbl\">BTS<small>เดินทาง</small></span><span class=\"ds-amt\">−47<span class=\"ds-u\">฿</span></span></button>",
+      "css": ".ds-row { display: grid; grid-template-columns: 36px minmax(0,1fr) auto; align-items: center; gap: 0.75rem; width: 100%; max-width: 420px; padding: 0.55rem 0; border: 0; border-bottom: 1px solid #d3d8cc; background: none; color: #1c211b; font-family: Anuphan, sans-serif; font-size: 0.9375rem; text-align: left; cursor: pointer; transition: background-color 0.15s ease; } .ds-row:hover { background: #e3e7de; } .ds-row:focus-visible { outline: 2px solid #1c211b; outline-offset: -2px; } .ds-tile { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 9px; background: #e3e7de; color: #535b4f; } .ds-lbl small { display: block; font-size: 0.8125rem; color: #535b4f; } .ds-amt { font-family: Trirong, Anuphan, serif; font-weight: 600; font-size: 1.0625rem; font-variant-numeric: lining-nums tabular-nums; text-align: right; } .ds-u { font-size: 0.62em; margin-left: 0.18em; font-weight: 500; }"
+    },
+    {
+      "name": "Band Header",
+      "kind": "nav",
+      "refersTo": "button-band",
+      "description": "Twenty-baht green band with wordmark, icon controls and month switcher over guilloché linework.",
+      "html": "<header class=\"ds-band\"><div class=\"ds-top\"><span class=\"ds-mark\">รายจ่าย</span><button class=\"ds-band-btn\" aria-label=\"ตั้งค่า\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><circle cx=\"12\" cy=\"12\" r=\"8\"/></svg></button></div><div class=\"ds-month\">ตุลาคม 2569</div><span class=\"ds-bal\">14,717<span class=\"ds-u\">฿</span></span></header>",
+      "css": ".ds-band { background: #1f5e3d; color: #f1f5ef; padding: 0.75rem 1.25rem 1.4rem; font-family: Anuphan, sans-serif; max-width: 400px; } .ds-top { display: flex; justify-content: space-between; align-items: center; min-height: 44px; } .ds-mark { font-weight: 700; font-size: 0.9375rem; } .ds-band-btn { width: 40px; height: 40px; border-radius: 10px; border: 0; background: rgba(241,245,239,0.12); color: #f1f5ef; display: grid; place-items: center; cursor: pointer; transition: background-color 0.15s ease; } .ds-band-btn:hover { background: rgba(241,245,239,0.2); } .ds-band-btn:focus-visible { outline: 2px solid #f1f5ef; outline-offset: 2px; } .ds-month { text-align: center; font-weight: 600; font-size: 1.0625rem; margin-top: 0.85rem; } .ds-bal { display: block; margin-top: 1.1rem; font-family: Trirong, Anuphan, serif; font-weight: 600; font-size: 3.5rem; line-height: 1.05; letter-spacing: -0.015em; font-variant-numeric: lining-nums tabular-nums; } .ds-u { font-size: 0.62em; margin-left: 0.18em; font-weight: 500; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Banknote Inks on Fibre Paper",
+    "overview": "The app is printed, not rendered. A cool, faintly green fibre-paper ground carries every surface; the shell is a deep 20-baht green band engraved with faint guilloché linework; money is set in an engraved Thai serif with tabular figures, right-aligned in a single column. The five Thai banknote inks are the whole palette and each ink has exactly one job, so colour always carries meaning: green is the shell, the primary action and income; red is over-budget and destruction; gold is near-limit; blue and purple only appear in data and on denomination chips.\n\nStructure comes from hairline rules on paper, not from cards. Sections are full-width panels divided by a 1px rule; lists are ledgers with day headers and rows separated by rules. The single piece of ornament with a job is the note chip: today's allowance is counted out as a small fanned stack of banknotes in their true inks. Dark mode is the same notes at night: an ink-green black ground with the inks lifted for legibility, while the note chips keep their printed colour.\n\nDensity is that of a working ledger: 15px body, 36px row tiles, 44px touch targets, one column on phones growing to a three-column ledger on wide desktops.",
+    "keyCharacteristics": [
+      "Fibre-paper ground (light) / ink-green night ground (dark); never pure white or pure black.",
+      "Deep green header band with guilloché linework at 16–20% opacity.",
+      "Engraved serif money figures (Trirong 600, tabular lining numerals) with a reduced baht unit.",
+      "Hairline-ruled panels instead of cards; ledgers instead of tiles.",
+      "Banknote-ink semantics: one ink, one job.",
+      "Fanned denomination chips as the signature.",
+      "Authored line icons (lucide, 1.75 stroke), never emoji in chrome."
+    ],
+    "rules": [
+      { "name": "The One Ink, One Job Rule", "body": "Green = shell, primary action, income. Red = over budget and destructive. Gold = near limit. Blue and purple = data and denomination chips only. If a colour appears without its meaning, it is wrong.", "section": "colors" },
+      { "name": "The Fixed Print Rule", "body": "Note-chip inks (note-20/50/100/500/1000) are printed colours and do not change between themes.", "section": "colors" },
+      { "name": "The No Pure Extremes Rule", "body": "Grounds are paper (#eef0ea) or night green (#0e1411); text is ink, never #000 or #fff on paper.", "section": "colors" },
+      { "name": "The Engraved Money Rule", "body": "Every amount goes through the Money component: Trirong 600, lining tabular numerals, the baht sign at 0.62em weight 500, a true minus sign (−) and an explicit + on signed income. Money is never set in the UI sans, and only these four sizes exist.", "section": "typography" },
+      { "name": "The One Column Rule", "body": "Amounts are right-aligned in a single trailing column in every list, row and header.", "section": "typography" },
+      { "name": "The Rules Not Cards Rule", "body": "Content sections are separated by a 1px rule on paper. No stacked rounded cards, no shadow on panels.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do route every amount through Money (Trirong 600, tabular, ฿ at 0.62em, true minus) at one of the four fixed sizes.",
+      "Do keep amounts in one right-aligned trailing column.",
+      "Do separate sections with 1px hairline rules on paper.",
+      "Do give each ink its one job: green shell/action/income, red over/destructive, gold near-limit, blue and purple data and denomination chips only.",
+      "Do pair every status colour with an icon and text.",
+      "Do use lucide line icons at 1.75 stroke (2 for small status icons) in 36px tiles for categories.",
+      "Do define both themes for any new token; dark mode lifts text inks, keeps note inks fixed.",
+      "Do keep touch targets at 44px minimum (36px for small and secondary controls)."
+    ],
+    "donts": [
+      "Don't stack white rounded cards on grey or give panels shadows.",
+      "Don't use gradient balance cards or gradient surfaces; the only gradients are the note watermark disc and the loading shimmer.",
+      "Don't put emoji in chrome or category icons.",
+      "Don't show stock Bootstrap chrome (default blue, focus glow, default radii).",
+      "Don't use red, gold, blue or purple decoratively.",
+      "Don't set money in the UI sans, or invent new money sizes.",
+      "Don't add portraits, crests or seals to guilloché; it stays geometric linework."
+    ]
+  }
+}

@@ -1,8 +1,11 @@
 import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { CircleCheck, OctagonAlert, TriangleAlert } from "lucide-react";
 
 const ToastContext = createContext(() => {});
 
-// notify(ข้อความ, "success" | "danger" | ..., { label, onClick }?)
+const ICONS = { success: CircleCheck, danger: OctagonAlert, warning: TriangleAlert };
+
+// notify(ข้อความ, "success" | "danger" | "warning", { label, onClick }?)
 // ถ้ามี action (เช่น "เลิกทำ") จะค้างไว้นานขึ้นให้กดทัน
 export function ToastProvider({ children }) {
     const [toast, setToast] = useState(null);
@@ -10,7 +13,7 @@ export function ToastProvider({ children }) {
 
     const notify = useCallback((text, variant = "success", action = null) => {
         clearTimeout(timer.current);
-        setToast({ text, variant, action });
+        setToast({ text, variant, action, id: Date.now() });
         timer.current = setTimeout(() => setToast(null), action ? 5000 : 2500);
     }, []);
 
@@ -21,27 +24,24 @@ export function ToastProvider({ children }) {
         action.onClick();
     };
 
+    const Icon = toast && (ICONS[toast.variant] || CircleCheck);
+
     return (
         <ToastContext.Provider value={notify}>
             {children}
-            {toast && (
-                <div className="app-toast" role="status" aria-live="polite">
-                    <div
-                        className={`alert alert-${toast.variant} shadow mb-0 py-2 d-flex align-items-center gap-3`}
-                    >
+            <div role="status" aria-live="polite">
+                {toast && (
+                    <div key={toast.id} className={`app-toast is-${toast.variant}`}>
+                        <Icon size={18} aria-hidden="true" />
                         <span>{toast.text}</span>
                         {toast.action && (
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-link p-0 fw-semibold text-nowrap"
-                                onClick={runAction}
-                            >
+                            <button type="button" className="toast-action" onClick={runAction}>
                                 {toast.action.label}
                             </button>
                         )}
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </ToastContext.Provider>
     );
 }

@@ -1,23 +1,22 @@
-import { useState } from "react";
-import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    serverTimestamp,
-    updateDoc,
-} from "firebase/firestore";
+import { useId, useState } from "react";
+import { addDoc, collection, deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { ChevronDown, Pause, Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { db } from "../firebase/config";
 import { commit } from "../firebase/write";
-import {
-    EXPENSE_CATEGORIES,
-    INCOME_CATEGORIES,
-    getCategory,
-} from "../constants/categories";
-import { formatMoney, monthKey, shiftMonth } from "../utils/format";
+import { getCategory } from "../constants/categories";
+import { monthKey, shiftMonth } from "../utils/format";
 import { dueDate, nextMonth } from "../utils/useRecurring";
+import CategoryPicker from "./CategoryPicker";
+import { CategoryTile } from "./CategoryIcon";
+import Money from "./Money";
+import Segmented from "./Segmented";
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+
+const TYPES = [
+    { value: "expense", label: "รายจ่าย" },
+    { value: "income", label: "รายรับ", className: "is-income" },
+];
 
 const emptyForm = () => ({
     type: "expense",
@@ -32,9 +31,9 @@ export default function RecurringCard({ uid, items, notify }) {
     const [open, setOpen] = useState(false);
     const [form, setForm] = useState(null); // null = ปิดฟอร์ม
     const [editingId, setEditingId] = useState(null);
+    const id = useId();
 
     const set = (field, value) => setForm((f) => ({ ...f, [field]: value }));
-    const categories = form?.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
     const openAdd = () => {
         setEditingId(null);
@@ -123,76 +122,88 @@ export default function RecurringCard({ uid, items, notify }) {
         .reduce((sum, i) => sum + (i.type === "income" ? i.amount : -i.amount), 0);
 
     return (
-        <div className="card app-card p-3 mb-3">
-            <button
-                type="button"
-                className="btn btn-link p-0 text-reset text-decoration-none d-flex justify-content-between align-items-center w-100"
-                onClick={() => setOpen((o) => !o)}
-                aria-expanded={open}
-            >
-                <h6 className="mb-0">🔁 รายการประจำ ({items.length})</h6>
-                <span className="small text-body-secondary">
-                    {items.length > 0 && `${monthlyNet >= 0 ? "+" : "−"}${formatMoney(Math.abs(monthlyNet))}/เดือน `}
-                    {open ? "▲" : "▼"}
-                </span>
-            </button>
+        <section className="panel" aria-labelledby={`${id}-title`}>
+            <h2 className="m-0" id={`${id}-title`}>
+                <button
+                    type="button"
+                    className="recurring-toggle"
+                    onClick={() => setOpen((o) => !o)}
+                    aria-expanded={open}
+                    aria-controls={`${id}-body`}
+                >
+                    <span className="panel-title">
+                        รายการประจำ<span className="count">{items.length}</span>
+                    </span>
+                    <span className="d-flex align-items-center gap-2 panel-meta">
+                        {items.length > 0 && (
+                            <span>
+                                <Money value={monthlyNet} signed className={monthlyNet > 0 ? "is-income" : ""} />
+                                /เดือน
+                            </span>
+                        )}
+                        <ChevronDown size={18} className={`chev ${open ? "is-open" : ""}`} aria-hidden="true" />
+                    </span>
+                </button>
+            </h2>
 
             {open && (
-                <div className="mt-3">
+                <div className="mt-2" id={`${id}-body`}>
                     {items.length === 0 && !form && (
-                        <small className="text-body-secondary d-block mb-2">
+                        <p className="empty mb-2">
                             ตั้งรายการที่เกิดทุกเดือน เช่น ค่าเช่า ค่าเน็ต เงินเดือน
                             แอปจะลงรายการให้อัตโนมัติเมื่อถึงวันที่กำหนด
-                        </small>
+                        </p>
                     )}
 
                     {items.map((item) => {
-                        const cat = getCategory(item.category);
                         const isIncome = item.type === "income";
                         return (
                             <div
                                 key={item.id}
-                                className={`tx-row d-flex align-items-center ${item.active ? "" : "opacity-50"} ${editingId === item.id ? "tx-editing" : ""}`}
+                                className={`row-item ${item.active ? "" : "is-paused"} ${editingId === item.id ? "is-editing" : ""}`}
                             >
-                                <span className="tx-icon me-2">{cat.icon}</span>
-                                <div className="flex-fill min-w-0">
-                                    <div className="text-truncate">{item.note}</div>
-                                    <small className="text-body-secondary d-block text-truncate">
+                                <CategoryTile category={item.category} income={isIncome} />
+                                <div className="min-w-0">
+                                    <div className="row-label">{item.note}</div>
+                                    <span className="row-sub">
                                         {item.active
                                             ? `ทุกวันที่ ${item.day} · ครั้งถัดไป ${dueDate(item, nextMonth(item)).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}`
-                                            : "⏸ หยุดไว้"}
-                                    </small>
+                                            : `หยุดไว้ · ${getCategory(item.category).label}`}
+                                    </span>
                                 </div>
-                                <div
-                                    className={`fw-semibold text-nowrap ms-2 ${isIncome ? "text-success" : "text-danger"}`}
-                                >
-                                    {isIncome ? "+" : "−"}
-                                    {formatMoney(item.amount)}
-                                </div>
-                                <div className="ms-1 text-nowrap">
+                                <Money
+                                    value={isIncome ? item.amount : -item.amount}
+                                    signed={isIncome}
+                                    className={`row-amount ${isIncome ? "is-income" : ""}`}
+                                />
+                                <div className="row-actions">
                                     <button
-                                        className="btn btn-sm btn-link px-1"
+                                        className="btn btn-quiet btn-sm icon-btn"
                                         title={item.active ? "หยุดชั่วคราว" : "เปิดใช้"}
-                                        aria-label={item.active ? "หยุดชั่วคราว" : "เปิดใช้"}
+                                        aria-label={`${item.active ? "หยุดชั่วคราว" : "เปิดใช้"} ${item.note}`}
                                         onClick={() => toggleActive(item)}
                                     >
-                                        {item.active ? "⏸" : "▶️"}
+                                        {item.active ? (
+                                            <Pause size={16} aria-hidden="true" />
+                                        ) : (
+                                            <Play size={16} aria-hidden="true" />
+                                        )}
                                     </button>
                                     <button
-                                        className="btn btn-sm btn-link px-1"
+                                        className="btn btn-quiet btn-sm icon-btn"
                                         title="แก้ไข"
-                                        aria-label="แก้ไข"
+                                        aria-label={`แก้ไข ${item.note}`}
                                         onClick={() => openEdit(item)}
                                     >
-                                        ✏️
+                                        <Pencil size={16} aria-hidden="true" />
                                     </button>
                                     <button
-                                        className="btn btn-sm btn-link px-1"
+                                        className="btn btn-quiet btn-sm icon-btn"
                                         title="ลบ"
-                                        aria-label="ลบ"
+                                        aria-label={`ลบ ${item.note}`}
                                         onClick={() => remove(item)}
                                     >
-                                        🗑️
+                                        <Trash2 size={16} aria-hidden="true" />
                                     </button>
                                 </div>
                             </div>
@@ -200,57 +211,64 @@ export default function RecurringCard({ uid, items, notify }) {
                     })}
 
                     {form ? (
-                        <form onSubmit={save} className="mt-3 pt-3 border-top">
-                            <h6 className="small fw-semibold mb-2">
-                                {editingId ? "แก้ไขรายการประจำ" : "เพิ่มรายการประจำ"}
-                            </h6>
-                            <div className="btn-group btn-group-sm w-100 mb-2" role="group">
-                                <button
-                                    type="button"
-                                    className={`btn ${form.type === "expense" ? "btn-danger" : "btn-outline-danger"}`}
-                                    onClick={() => setForm((f) => ({ ...f, type: "expense", category: "bills" }))}
-                                >
-                                    รายจ่าย
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`btn ${form.type === "income" ? "btn-success" : "btn-outline-success"}`}
-                                    onClick={() => setForm((f) => ({ ...f, type: "income", category: "salary" }))}
-                                >
-                                    รายรับ
-                                </button>
-                            </div>
-
-                            <input
-                                className="form-control mb-2"
-                                placeholder="ชื่อรายการ เช่น ค่าเช่าห้อง, Netflix"
-                                maxLength={100}
-                                value={form.note}
-                                onChange={(e) => set("note", e.target.value)}
+                        <form onSubmit={save} className="form-stack recurring-form">
+                            <h3 className="panel-title">{editingId ? "แก้ไขรายการประจำ" : "เพิ่มรายการประจำ"}</h3>
+                            <Segmented
+                                label="ประเภท"
+                                value={form.type}
+                                onChange={(type) =>
+                                    setForm((f) => ({ ...f, type, category: type === "income" ? "salary" : "bills" }))
+                                }
+                                options={TYPES}
+                                block
                             />
 
-                            <div className="row g-2 mb-2">
-                                <div className="col-7">
-                                    <div className="input-group">
+                            <div>
+                                <label className="form-label" htmlFor={`${id}-name`}>
+                                    ชื่อรายการ
+                                </label>
+                                <input
+                                    id={`${id}-name`}
+                                    className="form-control"
+                                    placeholder="เช่น ค่าเช่าห้อง, Netflix"
+                                    maxLength={100}
+                                    value={form.note}
+                                    onChange={(e) => set("note", e.target.value)}
+                                />
+                            </div>
+
+                            <div className="form-row-2">
+                                <div>
+                                    <label className="form-label" htmlFor={`${id}-amount`}>
+                                        จำนวนเงิน
+                                    </label>
+                                    <div className="field-money">
                                         <input
+                                            id={`${id}-amount`}
                                             className="form-control"
                                             inputMode="decimal"
-                                            placeholder="จำนวนเงิน"
+                                            autoComplete="off"
+                                            placeholder="0"
                                             value={form.amount}
                                             onChange={(e) => {
                                                 const v = e.target.value.replace(/,/g, "");
                                                 if (/^\d*\.?\d{0,2}$/.test(v)) set("amount", v);
                                             }}
                                         />
-                                        <span className="input-group-text">฿</span>
+                                        <span className="unit" aria-hidden="true">
+                                            ฿
+                                        </span>
                                     </div>
                                 </div>
-                                <div className="col-5">
+                                <div>
+                                    <label className="form-label" htmlFor={`${id}-day`}>
+                                        วันที่ของทุกเดือน
+                                    </label>
                                     <select
+                                        id={`${id}-day`}
                                         className="form-select"
                                         value={form.day}
                                         onChange={(e) => set("day", e.target.value)}
-                                        aria-label="วันที่ของทุกเดือน"
                                     >
                                         {DAYS.map((d) => (
                                             <option key={d} value={d}>
@@ -260,57 +278,49 @@ export default function RecurringCard({ uid, items, notify }) {
                                     </select>
                                 </div>
                             </div>
-
-                            <select
-                                className="form-select mb-2"
-                                value={form.category}
-                                onChange={(e) => set("category", e.target.value)}
-                                aria-label="หมวดหมู่"
-                            >
-                                {categories.map((c) => (
-                                    <option key={c.key} value={c.key}>
-                                        {c.icon} {c.label}
-                                    </option>
-                                ))}
-                            </select>
-
                             {Number(form.day) > 28 && (
-                                <small className="text-body-secondary d-block mb-2">
+                                <p className="form-hint mt-1">
                                     เดือนที่มีไม่ถึง {form.day} วัน จะลงวันสุดท้ายของเดือนแทน
-                                </small>
+                                </p>
                             )}
 
+                            <div>
+                                <span className="form-label d-block">หมวดหมู่</span>
+                                <CategoryPicker type={form.type} value={form.category} onChange={(v) => set("category", v)} />
+                            </div>
+
                             {!editingId && (
-                                <div className="form-check mb-2">
+                                <div className="form-check">
                                     <input
-                                        id="startNextMonth"
+                                        id={`${id}-next`}
                                         type="checkbox"
                                         className="form-check-input"
                                         checked={form.startNextMonth}
                                         onChange={(e) => set("startNextMonth", e.target.checked)}
                                     />
-                                    <label htmlFor="startNextMonth" className="form-check-label small">
+                                    <label htmlFor={`${id}-next`} className="form-check-label">
                                         เริ่มเดือนหน้า (เดือนนี้จดเองไปแล้ว)
                                     </label>
                                 </div>
                             )}
 
-                            <div className="d-flex gap-2">
-                                <button type="submit" className="btn btn-primary flex-fill">
+                            <div className="form-actions">
+                                <button type="submit" className="btn btn-primary">
                                     บันทึก
                                 </button>
-                                <button type="button" className="btn btn-secondary" onClick={closeForm}>
+                                <button type="button" className="btn btn-ghost" onClick={closeForm}>
                                     ยกเลิก
                                 </button>
                             </div>
                         </form>
                     ) : (
-                        <button className="btn btn-outline-primary btn-sm w-100 mt-2" onClick={openAdd}>
-                            + เพิ่มรายการประจำ
+                        <button className="btn btn-ghost w-100 mt-3" onClick={openAdd}>
+                            <Plus size={16} aria-hidden="true" />
+                            เพิ่มรายการประจำ
                         </button>
                     )}
                 </div>
             )}
-        </div>
+        </section>
     );
 }

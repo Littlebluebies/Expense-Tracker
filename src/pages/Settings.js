@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     EmailAuthProvider,
@@ -9,14 +9,8 @@ import {
     updatePassword,
     updateProfile,
 } from "firebase/auth";
-import {
-    collection,
-    doc,
-    getDocs,
-    query,
-    where,
-    writeBatch,
-} from "firebase/firestore";
+import { collection, doc, getDocs, query, where, writeBatch } from "firebase/firestore";
+import { ArrowLeft, CircleCheck, Download, LogOut, TriangleAlert } from "lucide-react";
 import { auth, db } from "../firebase/config";
 import { errorMessage } from "../firebase/errors";
 import { useAuth } from "../context/AuthContext";
@@ -24,6 +18,7 @@ import { useToast } from "../context/ToastContext";
 import { useTransactions } from "../utils/useFinanceData";
 import { exportCsv } from "../utils/csv";
 import { toInputDate } from "../utils/format";
+import Guilloche from "../components/Guilloche";
 
 // ยืนยันตัวตนด้วยรหัสผ่านอีกครั้ง (Firebase บังคับก่อนเปลี่ยนรหัส/ลบบัญชี)
 const reauth = (user, password) =>
@@ -39,12 +34,17 @@ async function deleteAllOwned(name, uid) {
     }
 }
 
-function Section({ title, children }) {
+function Section({ title, danger = false, children }) {
+    const id = useId();
     return (
-        <div className="card app-card p-3 mb-3">
-            <h6 className="mb-3">{title}</h6>
+        <section className={`panel ${danger ? "panel-danger" : ""}`} aria-labelledby={id}>
+            <div className="panel-head">
+                <h2 className="panel-title" id={id}>
+                    {title}
+                </h2>
+            </div>
             {children}
-        </div>
+        </section>
     );
 }
 
@@ -52,6 +52,7 @@ export default function Settings() {
     const { user, refresh } = useAuth();
     const notify = useToast();
     const { transactions } = useTransactions(user.uid);
+    const id = useId();
 
     // โปรไฟล์
     const [name, setName] = useState(user.displayName || "");
@@ -73,7 +74,7 @@ export default function Settings() {
         try {
             setSending(true);
             await sendEmailVerification(user);
-            notify("📩 ส่งอีเมลยืนยันแล้ว กรุณาเช็คกล่องจดหมาย (และโฟลเดอร์ Spam)");
+            notify("ส่งอีเมลยืนยันแล้ว กรุณาเช็คกล่องจดหมาย (และโฟลเดอร์ Spam)");
         } catch (err) {
             notify(errorMessage(err), "danger");
         } finally {
@@ -83,7 +84,7 @@ export default function Settings() {
     const checkVerified = async () => {
         await refresh();
         notify(
-            auth.currentUser?.emailVerified ? "✅ ยืนยันอีเมลเรียบร้อย" : "ยังไม่ได้ยืนยัน กรุณากดลิงก์ในอีเมลก่อน",
+            auth.currentUser?.emailVerified ? "ยืนยันอีเมลเรียบร้อย" : "ยังไม่ได้ยืนยัน กรุณากดลิงก์ในอีเมลก่อน",
             auth.currentUser?.emailVerified ? "success" : "warning"
         );
     };
@@ -132,150 +133,185 @@ export default function Settings() {
     };
 
     return (
-        <div className="app-bg min-vh-100">
-            <div className="app-container py-3">
-                <div className="d-flex align-items-center mb-3 gap-2">
-                    <Link to="/dashboard" className="btn btn-outline-secondary" aria-label="กลับ">
-                        ‹
+        <div className="settings">
+            <header className="band settings-band">
+                <Guilloche />
+                <div className="band-top">
+                    <Link to="/dashboard" className="btn band-ctl icon-btn" aria-label="กลับหน้าหลัก" title="กลับหน้าหลัก">
+                        <ArrowLeft size={20} aria-hidden="true" />
                     </Link>
-                    <h5 className="mb-0 fw-bold">⚙️ ตั้งค่าบัญชี</h5>
                 </div>
+                <h1>ตั้งค่าบัญชี</h1>
+                <p>{user.displayName ? `${user.displayName} · ${user.email}` : user.email}</p>
+            </header>
 
-                <Section title="👤 โปรไฟล์">
-                    <form onSubmit={saveName}>
-                        <label className="form-label small text-body-secondary" htmlFor="name">
-                            ชื่อที่แสดง
-                        </label>
-                        <div className="input-group">
-                            <input
-                                id="name"
-                                className="form-control"
-                                maxLength={50}
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                            />
-                            <button type="submit" className="btn btn-primary">
-                                บันทึก
-                            </button>
-                        </div>
-                    </form>
+            <Section title="โปรไฟล์">
+                <form onSubmit={saveName}>
+                    <label className="form-label" htmlFor={`${id}-name`}>
+                        ชื่อที่แสดง
+                    </label>
+                    <div className="d-flex gap-2">
+                        <input
+                            id={`${id}-name`}
+                            className="form-control"
+                            maxLength={50}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                        />
+                        <button type="submit" className="btn btn-primary flex-shrink-0">
+                            บันทึก
+                        </button>
+                    </div>
+                </form>
 
-                    <div className="mt-3 small">
-                        <div className="text-body-secondary">อีเมล</div>
-                        <div className="d-flex flex-wrap align-items-center gap-2">
-                            <span className="text-break">{user.email}</span>
-                            {user.emailVerified ? (
-                                <span className="badge text-bg-success">✅ ยืนยันแล้ว</span>
-                            ) : (
-                                <span className="badge text-bg-warning">⚠️ ยังไม่ยืนยัน</span>
-                            )}
-                        </div>
-                        {!user.emailVerified && (
-                            <div className="d-flex gap-2 mt-2">
-                                <button
-                                    className="btn btn-sm btn-outline-primary"
-                                    onClick={sendVerify}
-                                    disabled={sending}
-                                >
-                                    {sending ? "กำลังส่ง..." : "ส่งอีเมลยืนยัน"}
-                                </button>
-                                <button className="btn btn-sm btn-outline-secondary" onClick={checkVerified}>
-                                    ฉันยืนยันแล้ว
-                                </button>
-                            </div>
+                <div className="mt-4">
+                    <span className="form-label d-block">อีเมล</span>
+                    <div className="d-flex flex-wrap align-items-center gap-2">
+                        <span className="text-break">{user.email}</span>
+                        {user.emailVerified ? (
+                            <span className="badge-state is-ok">
+                                <CircleCheck size={15} aria-hidden="true" />
+                                ยืนยันแล้ว
+                            </span>
+                        ) : (
+                            <span className="badge-state is-warn">
+                                <TriangleAlert size={15} aria-hidden="true" />
+                                ยังไม่ยืนยัน
+                            </span>
                         )}
                     </div>
-                </Section>
+                    {!user.emailVerified && (
+                        <div className="d-flex flex-wrap gap-2 mt-2">
+                            <button className="btn btn-ghost btn-sm" onClick={sendVerify} disabled={sending}>
+                                {sending ? "กำลังส่ง..." : "ส่งอีเมลยืนยัน"}
+                            </button>
+                            <button className="btn btn-quiet btn-sm" onClick={checkVerified}>
+                                ฉันยืนยันแล้ว
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </Section>
 
-                <Section title="🔑 เปลี่ยนรหัสผ่าน">
-                    <form onSubmit={changePassword}>
-                        {/* ช่อง username ซ่อนไว้ให้ password manager รู้ว่าบัญชีไหน */}
-                        <input type="email" autoComplete="username" value={user.email} readOnly hidden />
+            <Section title="เปลี่ยนรหัสผ่าน">
+                <form onSubmit={changePassword} className="form-stack">
+                    {/* ช่อง username ซ่อนไว้ให้ password manager รู้ว่าบัญชีไหน */}
+                    <input type="email" autoComplete="username" value={user.email} readOnly hidden />
+                    <div>
+                        <label className="form-label" htmlFor={`${id}-pw-current`}>
+                            รหัสผ่านปัจจุบัน
+                        </label>
                         <input
-                            className="form-control mb-2"
+                            id={`${id}-pw-current`}
+                            className="form-control"
                             type="password"
                             autoComplete="current-password"
-                            placeholder="รหัสผ่านปัจจุบัน"
                             value={pw.current}
                             onChange={(e) => setPw({ ...pw, current: e.target.value })}
                             required
                         />
-                        <input
-                            className="form-control mb-2"
-                            type="password"
-                            autoComplete="new-password"
-                            placeholder="รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)"
-                            value={pw.next}
-                            onChange={(e) => setPw({ ...pw, next: e.target.value })}
-                            required
-                        />
-                        <input
-                            className="form-control mb-2"
-                            type="password"
-                            autoComplete="new-password"
-                            placeholder="ยืนยันรหัสผ่านใหม่"
-                            value={pw.confirm}
-                            onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
-                            required
-                        />
-                        <button type="submit" className="btn btn-primary w-100" disabled={pwBusy}>
-                            {pwBusy ? "กำลังบันทึก..." : "เปลี่ยนรหัสผ่าน"}
-                        </button>
-                    </form>
-                </Section>
-
-                <Section title="📦 ข้อมูลของฉัน">
-                    <p className="small text-body-secondary mb-2">
-                        ดาวน์โหลดรายการทั้งหมด {transactions.length.toLocaleString("th-TH")} รายการ เป็นไฟล์ CSV
-                    </p>
-                    <button
-                        className="btn btn-outline-secondary w-100"
-                        disabled={transactions.length === 0}
-                        onClick={() =>
-                            exportCsv(transactions, `transactions-all-${toInputDate(new Date())}.csv`)
-                        }
-                    >
-                        ⬇️ ส่งออกข้อมูลทั้งหมด (CSV)
+                    </div>
+                    <div className="form-row-2">
+                        <div>
+                            <label className="form-label" htmlFor={`${id}-pw-next`}>
+                                รหัสผ่านใหม่
+                            </label>
+                            <input
+                                id={`${id}-pw-next`}
+                                className="form-control"
+                                type="password"
+                                autoComplete="new-password"
+                                placeholder="อย่างน้อย 6 ตัว"
+                                value={pw.next}
+                                onChange={(e) => setPw({ ...pw, next: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="form-label" htmlFor={`${id}-pw-confirm`}>
+                                ยืนยันรหัสผ่านใหม่
+                            </label>
+                            <input
+                                id={`${id}-pw-confirm`}
+                                className="form-control"
+                                type="password"
+                                autoComplete="new-password"
+                                value={pw.confirm}
+                                onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
+                                required
+                            />
+                        </div>
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={pwBusy}>
+                        {pwBusy ? "กำลังบันทึก..." : "เปลี่ยนรหัสผ่าน"}
                     </button>
-                </Section>
+                </form>
+            </Section>
 
-                <button className="btn btn-outline-danger w-100 mb-3" onClick={() => signOut(auth)}>
+            <Section title="ข้อมูลของฉัน">
+                <p className="muted mb-3">
+                    ดาวน์โหลดรายการทั้งหมด {transactions.length.toLocaleString("th-TH")} รายการ เป็นไฟล์ CSV
+                    เปิดใน Excel หรือ Google Sheets ได้
+                </p>
+                <button
+                    className="btn btn-ghost w-100"
+                    disabled={transactions.length === 0}
+                    onClick={() => exportCsv(transactions, `transactions-all-${toInputDate(new Date())}.csv`)}
+                >
+                    <Download size={16} aria-hidden="true" />
+                    ส่งออกข้อมูลทั้งหมด (CSV)
+                </button>
+            </Section>
+
+            <div className="panel">
+                <button className="btn btn-ghost w-100" onClick={() => signOut(auth)}>
+                    <LogOut size={16} aria-hidden="true" />
                     ออกจากระบบ
                 </button>
+            </div>
 
-                <div className="card app-card p-3 mb-3 border border-danger-subtle">
-                    <h6 className="mb-2 text-danger-emphasis">🗑️ ลบบัญชี</h6>
-                    <p className="small mb-2">
-                        ลบบัญชีและข้อมูลทั้งหมด (รายการ งบประมาณ รายการประจำ) อย่างถาวร
-                        <strong> กู้คืนไม่ได้</strong> แนะนำให้ส่งออกข้อมูลเก็บไว้ก่อน
-                    </p>
-                    <form onSubmit={deleteAccount}>
+            <Section title="ลบบัญชี" danger>
+                <p className="mb-3">
+                    ลบบัญชีและข้อมูลทั้งหมด (รายการ งบประมาณ รายการประจำ) อย่างถาวร
+                    <strong> กู้คืนไม่ได้</strong> แนะนำให้ส่งออกข้อมูลเก็บไว้ก่อน
+                </p>
+                <form onSubmit={deleteAccount} className="form-stack">
+                    <div>
+                        <label className="form-label" htmlFor={`${id}-del-pw`}>
+                            รหัสผ่านปัจจุบัน
+                        </label>
                         <input
-                            className="form-control mb-2"
+                            id={`${id}-del-pw`}
+                            className="form-control"
                             type="password"
                             autoComplete="current-password"
-                            placeholder="รหัสผ่านปัจจุบัน"
                             value={del.password}
                             onChange={(e) => setDel({ ...del, password: e.target.value })}
                             required
                         />
+                    </div>
+                    <div>
+                        <label className="form-label" htmlFor={`${id}-del-confirm`}>
+                            พิมพ์คำว่า “ลบบัญชี” เพื่อยืนยัน
+                        </label>
                         <input
-                            className="form-control mb-2"
-                            placeholder='พิมพ์คำว่า "ลบบัญชี" เพื่อยืนยัน'
+                            id={`${id}-del-confirm`}
+                            className="form-control"
+                            autoComplete="off"
                             value={del.confirm}
                             onChange={(e) => setDel({ ...del, confirm: e.target.value })}
                             required
                         />
-                        <button
-                            type="submit"
-                            className="btn btn-danger w-100"
-                            disabled={delBusy || del.confirm !== "ลบบัญชี"}
-                        >
-                            {delBusy ? "กำลังลบ..." : "ลบบัญชีถาวร"}
-                        </button>
-                    </form>
-                </div>
-            </div>
+                    </div>
+                    <button
+                        type="submit"
+                        className="btn btn-danger w-100"
+                        disabled={delBusy || del.confirm !== "ลบบัญชี"}
+                    >
+                        {delBusy ? "กำลังลบ..." : "ลบบัญชีถาวร"}
+                    </button>
+                </form>
+            </Section>
         </div>
     );
 }
