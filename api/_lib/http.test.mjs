@@ -10,6 +10,9 @@ test("safeReturnTo accepts internal paths only", () => {
     assert.equal(safeReturnTo("https://evil.com"), null);
     assert.equal(safeReturnTo(""), null);
     assert.equal(safeReturnTo(undefined), null);
+    assert.equal(safeReturnTo("/\t/evil.com"), null);
+    assert.equal(safeReturnTo("/\n/evil.com"), null);
+    assert.equal(safeReturnTo("/foo\\bar"), null);
 });
 
 test("json sets status, content type and extra headers", async () => {
