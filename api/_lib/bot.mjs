@@ -1,7 +1,7 @@
 import { learnKey, parseMessage } from "./parse.mjs";
 import { decodePostback } from "./postback.mjs";
 import { isCategory, typeOf } from "./categories.mjs";
-import { addDays, bangkokYmd, minuteIndex, monthBounds, monthKey, noonBangkok } from "./thaiDate.mjs";
+import { addDays, bangkokYmd, isValidYmd, minuteIndex, monthBounds, monthKey, noonBangkok } from "./thaiDate.mjs";
 import {
     MSG, categoryQuickReply, dateCard, errorText, fixItemsQuickReply, helpMessage, limitMessage,
     monthSummaryMessage, notLinkedMessage, statusText, summaryCard, textMessage, welcomeMessage,
@@ -151,8 +151,9 @@ async function onPostback(event, pb, ctx) {
     if (pb.a === "date") {
         if (draft.status !== "awaitingDate") return [textMessage(statusText(draft.status))];
         const date = pb.v === "today" ? today : pb.v === "yesterday" ? addDays(today, -1) : event.postback?.params?.date;
-        // max ของ datetimepicker บังคับได้แค่ในแอป LINE -> ตรวจซ้ำที่นี่
-        if (!YMD.test(date || "") || date > today) return [textMessage(MSG.badDate)];
+        // max ของ datetimepicker บังคับได้แค่ในแอป LINE -> ตรวจซ้ำที่นี่ (รวมวันที่ไม่มีจริง เช่น 2026-02-30)
+        const [y, m, d] = (date || "").split("-").map(Number);
+        if (!YMD.test(date || "") || !isValidYmd(y, m, d) || date > today) return [textMessage(MSG.badDate)];
         return commitDate(id, draft, date, ctx);
     }
     if (pb.a === "cancel") {

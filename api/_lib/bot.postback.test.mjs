@@ -50,7 +50,7 @@ test("yesterday and the date picker set the date", async () => {
 });
 
 test("a future or malformed picked date is refused without saving", async () => {
-    for (const params of [{ date: "2026-10-15" }, { date: "14/10/2026" }, undefined]) {
+    for (const params of [{ date: "2026-10-15" }, { date: "14/10/2026" }, { date: "2026-02-30" }, { date: "2026-13-01" }, undefined]) {
         const store = store0();
         const d = await awaiting(store, "ค่าข้าว 50");
         assert.deepEqual(texts(await run(store, tap({ a: "date", d, v: "pick" }, params))), ["เลือกวันที่ไม่เกินวันนี้"]);
