@@ -2,6 +2,9 @@
   "name": "expense-tracker",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "dependencies": {
     "@fontsource/anuphan": "^5.3.0",
     "@fontsource/trirong": "^5.3.0",
