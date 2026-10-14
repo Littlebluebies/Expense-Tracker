@@ -15,10 +15,28 @@ const UNSAFE_PATH_CHARS = /[\u0000-\u001f\u007f\\]/;
 const safePath = (path) =>
     path && path.startsWith("/") && !path.startsWith("//") && !UNSAFE_PATH_CHARS.test(path) ? path : "/dashboard";
 
-// /auth/line#token=...&returnTo=/settings
+// /auth/line#token=...&returnTo=/settings&cn=...
 export function readLineHash(hash) {
     const params = new URLSearchParams((hash || "").replace(/^#/, ""));
-    return { token: params.get("token"), returnTo: safePath(params.get("returnTo")) };
+    return { token: params.get("token"), returnTo: safePath(params.get("returnTo")), cn: params.get("cn") };
+}
+
+// ค่าสุ่มที่เบราว์เซอร์นี้เก็บไว้ตอนกด "เข้าสู่ระบบด้วย LINE" (ใช้ localStorage เพราะ LINE อาจเปิดกลับมาในแท็บใหม่)
+export const LOGIN_NONCE_KEY = "line_cn";
+export const LOGIN_NONCE_TTL = 10 * 60 * 1000; // เท่ากับอายุ cookie ฝั่ง server
+
+// true เฉพาะเมื่อ cn ใน #hash ตรงกับที่เบราว์เซอร์นี้เก็บไว้และยังไม่หมดอายุ
+// ลบค่าที่เก็บไว้ทุกครั้ง (ใช้ได้ครั้งเดียว) -> ลิงก์ token ที่คนอื่นส่งมาจะ login ไม่ได้
+export function takeLoginNonce(storage, hashCn, now = Date.now()) {
+    try {
+        const raw = storage.getItem(LOGIN_NONCE_KEY);
+        storage.removeItem(LOGIN_NONCE_KEY);
+        if (!hashCn || !raw) return false;
+        const { cn, exp } = JSON.parse(raw) || {};
+        return typeof cn === "string" && cn === hashCn && Number.isFinite(exp) && now <= exp;
+    } catch {
+        return false;
+    }
 }
 
 // บัญชีที่สมัครด้วยอีเมล (ถึงจะเชื่อม LINE แล้วก็ยังมี provider "password")
