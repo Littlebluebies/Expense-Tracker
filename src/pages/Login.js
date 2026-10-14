@@ -87,6 +87,9 @@ export default function Login() {
         )}
 
         <LineButton onError={setError} />
+        <p className="muted small mb-0">
+          มีบัญชีอีเมลอยู่แล้ว? เข้าสู่ระบบด้วยอีเมลก่อน แล้วเชื่อม LINE ที่หน้าตั้งค่า
+        </p>
         <div className="auth-divider">หรือใช้อีเมล</div>
 
         <div>

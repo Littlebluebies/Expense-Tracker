@@ -78,17 +78,28 @@ const bubble = (altText, body, footer) => ({
 });
 const linkCard = (message, label, uri) => bubble(message, [text(message)], [button(uriAction(label, uri), "primary")]);
 
-export const notLinkedMessage = (webUrl) =>
-    linkCard(
-        "ยังไม่ได้เชื่อมบัญชี LINE กับแอป\nเข้าสู่ระบบด้วย LINE ที่หน้าเว็บก่อน แล้วกลับมาจดในแชทนี้ได้เลย",
-        "เข้าสู่ระบบ / เชื่อมบัญชี",
-        `${webUrl}/`
+// คนที่มีบัญชีอีเมลอยู่แล้วต้องเชื่อมจากหน้าตั้งค่า ถ้ากด "เข้าสู่ระบบด้วย LINE" จะได้บัญชีใหม่แยกกัน
+const NOT_LINKED = [
+    "ยังไม่ได้เชื่อมบัญชี LINE กับแอป",
+    "• มีบัญชีอีเมลอยู่แล้ว: เข้าสู่ระบบด้วยอีเมล แล้วไปที่ ตั้งค่า › LINE › เชื่อมบัญชี LINE",
+    "• ยังไม่มีบัญชี: กด “เข้าสู่ระบบด้วย LINE” ที่หน้าเว็บ",
+].join("\n");
+const notLinkedCard = (message, webUrl) =>
+    bubble(
+        message,
+        [text(message)],
+        [
+            button(uriAction("เชื่อมกับบัญชีอีเมลเดิม", `${webUrl}/settings`), "primary"),
+            button(uriAction("เริ่มใช้ด้วย LINE", `${webUrl}/`)),
+        ]
     );
+
+export const notLinkedMessage = (webUrl) => notLinkedCard(NOT_LINKED, webUrl);
 
 export const welcomeMessage = (linked, webUrl) =>
     linked
         ? textMessage(`สวัสดี! เริ่มจดได้เลย\n\n${HELP}`)
-        : linkCard("สวัสดี! บอทนี้ช่วยจดรายรับ-รายจ่ายจากแชท\nเชื่อมบัญชีที่หน้าเว็บก่อนเริ่มใช้", "เข้าสู่ระบบ / เชื่อมบัญชี", `${webUrl}/`);
+        : notLinkedCard(`สวัสดี! บอทนี้ช่วยจดรายรับ-รายจ่ายจากแชท\n\n${NOT_LINKED}`, webUrl);
 
 export const limitMessage = (decision, webUrl) =>
     decision === "warnMinute" ? textMessage(MSG.tooFast) : linkCard(MSG.dayLimit, "เปิดเว็บ", `${webUrl}/dashboard`);

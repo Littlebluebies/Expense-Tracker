@@ -21,7 +21,8 @@ test("an unlinked LINE user gets the link card; nothing is counted or stored", a
     const store = createFakeStore();
     const msgs = await run(store, text("ค่าข้าว 50"));
     assert.equal(msgs.length, 1);
-    assert.match(str(msgs), /เข้าสู่ระบบ \/ เชื่อมบัญชี/);
+    assert.match(str(msgs), /เชื่อมกับบัญชีอีเมลเดิม/);
+    assert.match(str(msgs), /https:\/\/app\.test\/settings/);
     assert.match(str(msgs), /https:\/\/app\.test\//);
     assert.equal(store.quotaCalls, 0);
     assert.equal(store.drafts.size, 0);
@@ -30,7 +31,7 @@ test("an unlinked LINE user gets the link card; nothing is counted or stored", a
 test("follow greets linked and unlinked users differently", async () => {
     const follow = (userId) => ({ type: "follow", replyToken: "rt", source: { type: "user", userId } });
     assert.match((await run(linkedStore(), follow("U1")))[0].text, /เริ่มจดได้เลย/);
-    assert.match(str(await run(linkedStore(), follow("U9"))), /เชื่อมบัญชีที่หน้าเว็บ/);
+    assert.match(str(await run(linkedStore(), follow("U9"))), /สวัสดี!.*ตั้งค่า › LINE/);
 });
 
 test("group and room chats are ignored so a linked user's items never reach other members", async () => {

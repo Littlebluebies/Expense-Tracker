@@ -136,3 +136,23 @@ test("fixed messages", () => {
     assert.equal(statusText("cancelled"), "ยกเลิกไปแล้ว");
     assert.equal(MSG.undone(2), "เลิกทำแล้ว ลบ 2 รายการ");
 });
+
+test("the not-linked and unlinked-welcome cards steer email users to link from Settings", () => {
+    const WEB = "https://app.test";
+    for (const msg of [notLinkedMessage(WEB), welcomeMessage(false, WEB)]) {
+        const uris = findAll(msg, (n) => n.type === "uri");
+        assert.deepEqual(
+            uris.map((a) => [a.label, a.uri]),
+            [
+                ["เชื่อมกับบัญชีอีเมลเดิม", `${WEB}/settings`],
+                ["เริ่มใช้ด้วย LINE", `${WEB}/`],
+            ]
+        );
+        for (const a of uris) assert.ok(a.label.length <= 40, a.label);
+        const body = findAll(msg, (n) => n.type === "text").map((n) => n.text).join("\n");
+        assert.match(body, /ตั้งค่า › LINE › เชื่อมบัญชี LINE/);
+        assert.match(body, /ยังไม่มีบัญชี: กด “เข้าสู่ระบบด้วย LINE” ที่หน้าเว็บ/);
+    }
+    assert.match(str(welcomeMessage(false, WEB)), /สวัสดี!/);
+    assert.doesNotMatch(str(notLinkedMessage(WEB)), /สวัสดี!/);
+});
