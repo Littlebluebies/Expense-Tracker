@@ -265,6 +265,7 @@ npm run build   # สร้างไฟล์สำหรับขึ้นเ�
 1. Push โค้ดขึ้น GitHub
 2. ไปที่ [vercel.com/new](https://vercel.com/new) แล้วเลือก repo นี้ Vercel จะตรวจเจอว่าเป็น Create React App เอง ไม่ต้องตั้งค่าอะไรเพิ่ม แล้วกด **Deploy**
 3. นำโดเมนที่ได้ (เช่น `ชื่อแอป.vercel.app`) ไปเพิ่มที่ Firebase Console → Authentication → Settings → **Authorized domains**
+4. ถ้าเปิดใช้ LINE ให้ทำตามหัวข้อ **ตั้งค่า LINE (LINE Login + บอท)** ด้านบนให้ครบ (Environment Variables, `firestore.rules`, index) ก่อน deploy
 
 หลังจากนั้น ทุกครั้งที่ push ขึ้น branch `main` Vercel จะ deploy ให้อัตโนมัติ
 
