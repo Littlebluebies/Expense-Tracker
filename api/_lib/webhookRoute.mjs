@@ -19,15 +19,20 @@ export function createWebhookHandler({ channelSecret, accessToken, store, limits
 
         const webUrl = new URL(request.url).origin;
         for (const event of body.events || []) {
+            // ไม่ใส่ข้อความของผู้ใช้หรือ token ลง log
+            let messages;
             try {
-                const messages = await handleEvent(event, { store, now: clock(), limits, webUrl });
+                messages = await handleEvent(event, { store, now: clock(), limits, webUrl });
+            } catch (err) {
+                console.error("LINE event failed:", err?.message);
+                messages = [textMessage(MSG.systemError)];
+            }
+            if (!event?.replyToken) continue;
+            // ตอบไม่สำเร็จหลังบันทึกไปแล้ว -> ห้ามตอบ "ระบบขัดข้อง" ไม่งั้นผู้ใช้พิมพ์ซ้ำแล้วได้รายการซ้ำ
+            try {
                 await replyMessage(event.replyToken, messages, accessToken, fetchImpl);
             } catch (err) {
-                // ไม่ใส่ข้อความของผู้ใช้หรือ token ลง log
-                console.error("LINE event failed:", err?.message);
-                if (event.replyToken) {
-                    await replyMessage(event.replyToken, [textMessage(MSG.systemError)], accessToken, fetchImpl).catch(() => {});
-                }
+                console.error("LINE reply failed:", err?.message);
             }
         }
         // ตอบ 200 เสมอเมื่อลายเซ็นถูก ไม่งั้น LINE จะถือว่า webhook พัง

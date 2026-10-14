@@ -62,6 +62,25 @@ test("when an event fails the user gets the system error and LINE still gets 200
     assert.match(f.calls[0].body, /ระบบขัดข้อง/);
 });
 
+test("a failed reply after a committed save is not followed by a second, misleading system-error reply", async () => {
+    const store = createFakeStore({ links: { U1: { userId: "u1" } } });
+    const f = fakeFetch({ [REPLY]: { status: 400, body: { message: "Invalid reply token" } } });
+    const res = await handler(store, f)(request(JSON.stringify({ events: [textEvent("U1", "เมื่อวาน ค่าข้าว 50")] })));
+    assert.equal(res.status, 200);
+    assert.equal(f.calls.filter((c) => c.url === REPLY).length, 1);
+    assert.doesNotMatch(f.calls[0].body, /ระบบขัดข้อง/);
+    assert.equal(store.txs.size, 1);
+    assert.equal([...store.txs.values()][0].note, "ค่าข้าว");
+});
+
+test("events without a reply token are processed but never replied to", async () => {
+    const f = fakeFetch({ [REPLY]: { body: {} } });
+    const { replyToken, ...noToken } = textEvent("U1", "ค่าข้าว 50");
+    const res = await handler(createFakeStore(), f)(request(JSON.stringify({ events: [noToken] })));
+    assert.equal(res.status, 200);
+    assert.equal(f.calls.length, 0);
+});
+
 test("a body that is not JSON gets 400", async () => {
     const res = await handler(createFakeStore(), fakeFetch({}))(request("not json"));
     assert.equal(res.status, 400);
