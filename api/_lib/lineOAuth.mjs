@@ -1,4 +1,4 @@
-﻿import { randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 // LINE Login v2.1: https://developers.line.biz/en/reference/line-login/
 const AUTHORIZE_URL = "https://access.line.me/oauth2/v2.1/authorize";

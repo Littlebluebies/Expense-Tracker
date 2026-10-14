@@ -1,4 +1,4 @@
-﻿import { test } from "node:test";
+import { test } from "node:test";
 import assert from "node:assert/strict";
 import { authorizeUrl, exchangeCode, randomToken, verifyIdToken } from "./lineOAuth.mjs";
 import { fakeFetch } from "./testing/fakes.mjs";

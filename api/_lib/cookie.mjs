@@ -1,4 +1,4 @@
-﻿import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 // cookie ที่ลงลายเซ็น HMAC เก็บ state/nonce ระหว่างไปหน้า LINE แล้วกลับมา
 // เนื้อหาอ่านได้ (base64url) แต่แก้ไม่ได้ และมีเวลาหมดอายุในตัว
