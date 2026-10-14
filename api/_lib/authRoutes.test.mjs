@@ -64,6 +64,36 @@ test("start (link) requires a valid Firebase ID token and remembers the uid", as
     assert.equal(saved.returnTo, "/settings");
 });
 
+test("start (link) requires a sign-in from the last 5 minutes and checks revocation", async () => {
+    const { auth, start } = setup();
+    const stale = await start(startReq({ mode: "link" }, { Authorization: "Bearer old-u42" }));
+    assert.equal(stale.status, 401);
+    assert.deepEqual(await stale.json(), { error: "reauth_required" });
+    assert.equal(stale.headers.get("set-cookie"), null);
+    const fresh = await start(startReq({ mode: "link" }, { Authorization: "Bearer id-u42" }));
+    assert.equal(fresh.status, 200);
+    assert.ok(auth.verifyCalls.length >= 2);
+    for (const call of auth.verifyCalls) assert.equal(call.checkRevoked, true);
+});
+
+test("start (link) treats a token without auth_time as stale", async () => {
+    const auth = fakeAuth();
+    auth.verifyIdToken = async () => ({ uid: "u42" });
+    const start = createStartHandler({ auth, cookieSecret: SECRET, channelId: "123" });
+    const res = await start(startReq({ mode: "link" }, { Authorization: "Bearer id-u42" }));
+    assert.equal(res.status, 401);
+    assert.equal(res.headers.get("set-cookie"), null);
+});
+
+test("start (link) measures the sign-in age with the injected clock", async () => {
+    const auth = fakeAuth();
+    auth.verifyIdToken = async () => ({ uid: "u42", auth_time: 1_000_000 });
+    const at = (sec) => createStartHandler({ auth, cookieSecret: SECRET, channelId: "123", now: () => sec * 1000 });
+    const req = () => startReq({ mode: "link" }, { Authorization: "Bearer id-u42" });
+    assert.equal((await at(1_000_300)(req())).status, 200);
+    assert.equal((await at(1_000_301)(req())).status, 401);
+});
+
 test("start keeps safe returnTo values and drops unsafe ones", async () => {
     const { start } = setup();
     const keep = openCookie(cookieOf(await start(startReq({ mode: "login", returnTo: "/settings" }))), SECRET);

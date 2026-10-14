@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { collection, deleteDoc, doc, getDocs, limit, query, where } from "firebase/firestore";
 import { CircleCheck } from "lucide-react";
-import { db } from "../firebase/config";
+import { auth, db } from "../firebase/config";
 import { errorMessage } from "../firebase/errors";
 import LineButton from "./LineButton";
 
@@ -11,6 +12,8 @@ const ADD_FRIEND_URL = process.env.REACT_APP_LINE_ADD_FRIEND_URL;
 export default function LineSection({ user, canUnlink, notify }) {
     const [link, setLink] = useState(undefined); // undefined = กำลังโหลด, null = ยังไม่เชื่อม, "error" = โหลดไม่ได้
     const [busy, setBusy] = useState(false);
+    const [password, setPassword] = useState("");
+    const id = useId();
 
     useEffect(() => {
         let alive = true;
@@ -42,12 +45,39 @@ export default function LineSection({ user, canUnlink, notify }) {
     }
 
     if (!link) {
+        // บัญชีอีเมล: ยืนยันรหัสผ่านก่อน (server ยอมเชื่อมเฉพาะเมื่อ login มาไม่เกิน 5 นาที)
+        const reauth = () =>
+            reauthenticateWithCredential(
+                auth.currentUser,
+                EmailAuthProvider.credential(auth.currentUser.email, password)
+            );
         return (
             <>
                 <p className="muted mb-3">
                     เชื่อมบัญชี LINE เพื่อจดรายรับ-รายจ่ายผ่านแชท LINE ได้ทันที เช่น พิมพ์ “ค่าข้าว 50”
+                    {canUnlink && " (กรอกรหัสผ่านเพื่อยืนยันตัวตนก่อนเชื่อม)"}
                 </p>
-                <LineButton mode="link" onError={(m) => notify(m, "danger")}>
+                {canUnlink && (
+                    <div className="mb-3">
+                        <label className="form-label" htmlFor={`${id}-line-pw`}>
+                            รหัสผ่านปัจจุบัน
+                        </label>
+                        <input
+                            id={`${id}-line-pw`}
+                            className="form-control"
+                            type="password"
+                            autoComplete="current-password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </div>
+                )}
+                <LineButton
+                    mode="link"
+                    prepare={canUnlink ? reauth : undefined}
+                    disabled={canUnlink && !password}
+                    onError={(m) => notify(m, "danger")}
+                >
                     เชื่อมบัญชี LINE
                 </LineButton>
             </>

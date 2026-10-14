@@ -49,8 +49,10 @@ export function fakeDb() {
 export function fakeAuth() {
     let n = 0;
     const users = new Map();
+    const verifyCalls = [];
     return {
         users,
+        verifyCalls,
         async createUser({ displayName }) {
             n += 1;
             const uid = `uid${n}`;
@@ -63,8 +65,12 @@ export function fakeAuth() {
         async createCustomToken(uid) {
             return `token-for-${uid}`;
         },
-        async verifyIdToken(token) {
-            if (typeof token === "string" && token.startsWith("id-")) return { uid: token.slice(3) };
+        // "id-<uid>" = เพิ่ง login, "old-<uid>" = login มา 10 นาทีแล้ว
+        async verifyIdToken(token, checkRevoked) {
+            verifyCalls.push({ token, checkRevoked });
+            const nowSec = Math.floor(Date.now() / 1000);
+            if (typeof token === "string" && token.startsWith("id-")) return { uid: token.slice(3), auth_time: nowSec };
+            if (typeof token === "string" && token.startsWith("old-")) return { uid: token.slice(4), auth_time: nowSec - 600 };
             throw new Error("invalid token");
         },
     };
