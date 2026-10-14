@@ -8,11 +8,11 @@ const NOW = new Date("2026-10-14T05:00:00Z");
 const LIMITS = { perMinute: 20, perDay: 300 };
 const LINKS = { U1: { userId: "u1", displayName: "Ann" }, U2: { userId: "u2", displayName: "Bob" } };
 const store0 = (extra = {}) => createFakeStore({ links: LINKS, ...extra });
-const text = (t, id = "m1") => ({ type: "message", replyToken: "rt", source: { userId: "U1" }, message: { type: "text", id, text: t } });
+const text = (t, id = "m1") => ({ type: "message", replyToken: "rt", source: { type: "user", userId: "U1" }, message: { type: "text", id, text: t } });
 const tap = (data, params, userId = "U1") => ({
     type: "postback",
     replyToken: "rt",
-    source: { userId },
+    source: { type: "user", userId },
     postback: { data: encodePostback(data), ...(params ? { params } : {}) },
 });
 const run = (store, event, now = NOW) => handleEvent(event, { store, now, limits: LIMITS, webUrl: "https://app.test" });

@@ -15,7 +15,7 @@ const handler = (store, fetchImpl) =>
 const textEvent = (userId, text, replyToken = "r1") => ({
     type: "message",
     replyToken,
-    source: { userId },
+    source: { type: "user", userId },
     message: { type: "text", id: `id-${replyToken}`, text },
 });
 

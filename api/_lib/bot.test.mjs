@@ -11,7 +11,7 @@ const linkedStore = (extra = {}) => createFakeStore({ links: ANN, ...extra });
 const text = (t, id = "m1", userId = "U1") => ({
     type: "message",
     replyToken: "rt",
-    source: { userId },
+    source: { type: "user", userId },
     message: { type: "text", id, text: t },
 });
 const run = (store, event, { now = NOW, limits = LIMITS } = {}) => handleEvent(event, { store, now, limits, webUrl: WEB });
@@ -28,9 +28,30 @@ test("an unlinked LINE user gets the link card; nothing is counted or stored", a
 });
 
 test("follow greets linked and unlinked users differently", async () => {
-    const follow = (userId) => ({ type: "follow", replyToken: "rt", source: { userId } });
+    const follow = (userId) => ({ type: "follow", replyToken: "rt", source: { type: "user", userId } });
     assert.match((await run(linkedStore(), follow("U1")))[0].text, /เริ่มจดได้เลย/);
     assert.match(str(await run(linkedStore(), follow("U9"))), /เชื่อมบัญชีที่หน้าเว็บ/);
+});
+
+test("group and room chats are ignored so a linked user's items never reach other members", async () => {
+    for (const source of [
+        { type: "group", groupId: "g", userId: "U1" },
+        { type: "room", roomId: "r", userId: "U1" },
+    ]) {
+        const store = linkedStore();
+        let reads = 0;
+        const find = store.findLink;
+        store.findLink = async (...args) => {
+            reads += 1;
+            return find(...args);
+        };
+        assert.deepEqual(await run(store, { ...text("สรุป"), source }), []);
+        assert.deepEqual(await run(store, { ...text("ค่าข้าว 50"), source }), []);
+        assert.equal(reads, 0);
+        assert.equal(store.quotaCalls, 0);
+        assert.equal(store.drafts.size, 0);
+        assert.equal(store.txs.size, 0);
+    }
 });
 
 test("stickers and events without a reply token are ignored without reading anything", async () => {
@@ -41,10 +62,10 @@ test("stickers and events without a reply token are ignored without reading anyt
         reads += 1;
         return find(...args);
     };
-    const sticker = { type: "message", replyToken: "rt", source: { userId: "U1" }, message: { type: "sticker", id: "s1" } };
+    const sticker = { type: "message", replyToken: "rt", source: { type: "user", userId: "U1" }, message: { type: "sticker", id: "s1" } };
     assert.deepEqual(await run(store, sticker), []);
     assert.deepEqual(await run(store, { ...text("ค่าข้าว 50"), replyToken: undefined }), []);
-    assert.deepEqual(await run(store, { type: "unfollow", source: { userId: "U1" } }), []);
+    assert.deepEqual(await run(store, { type: "unfollow", source: { type: "user", userId: "U1" } }), []);
     assert.equal(reads, 0);
     assert.equal(store.quotaCalls, 0);
 });

@@ -17,6 +17,8 @@ const YMD = /^\d{4}-\d{2}-\d{2}$/;
 // deps = { store, now, limits, webUrl } (store ดู interface ใน testing/fakes.mjs และ store.mjs)
 export async function handleEvent(event, deps) {
     const { store, now, limits, webUrl } = deps;
+    // ตอบเฉพาะแชท 1:1 ในกลุ่ม/ห้อง ข้อความตอบกลับ (รายการ ยอดสรุป) จะโผล่ให้สมาชิกทุกคนเห็น
+    if (event?.source?.type !== "user") return [];
     const lineUserId = event?.source?.userId;
     if (!lineUserId || !event.replyToken) return [];
     const isText = event.type === "message" && event.message?.type === "text";
