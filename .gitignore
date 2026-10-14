@@ -29,3 +29,8 @@ yarn-error.log*
 
 # Vercel CLI (vercel dev / vercel link)
 .vercel
+
+# กุญแจ service account ของ Firebase (ห้าม commit เด็ดขาด ใส่ใน env ของ Vercel แทน)
+*-firebase-adminsdk-*.json
+serviceAccount*.json
+service-account*.json
