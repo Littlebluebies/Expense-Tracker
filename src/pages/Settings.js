@@ -131,11 +131,14 @@ export default function Settings() {
         e.preventDefault();
         if (!navigator.onLine) return notify("ต้องเชื่อมต่ออินเทอร์เน็ตก่อนลบบัญชี", "danger");
         if (del.confirm !== "ลบบัญชี") return notify('กรุณาพิมพ์คำว่า "ลบบัญชี" ให้ถูกต้อง', "danger");
+        // ใช้ผู้ใช้ปัจจุบันของ Firebase ตรงๆ หลัง login LINE ซ้ำ object ใน context อาจเป็นตัวเก่า (authTime เก่า)
+        const current = auth.currentUser;
+        if (!current) return;
         // บัญชี LINE อย่างเดียวยืนยันด้วยรหัสผ่านไม่ได้ -> ต้อง login มาไม่นาน
         // เช็กก่อนลบอะไร ไม่งั้นข้อมูลหายแต่ลบบัญชีไม่ผ่าน
         if (!passwordUser) {
             setDelBusy(true);
-            const fresh = await user.getIdTokenResult(true).then(isRecentSignIn).catch(() => false);
+            const fresh = await current.getIdTokenResult(true).then(isRecentSignIn).catch(() => false);
             if (!fresh) {
                 setDelBusy(false);
                 return setNeedsRelogin(true);
@@ -143,16 +146,16 @@ export default function Settings() {
         }
         try {
             setDelBusy(true);
-            if (passwordUser) await reauth(user, del.password);
-            await deleteAllOwned("transactions", user.uid);
-            await deleteAllOwned("recurring", user.uid);
-            await deleteAllOwned("lineDrafts", user.uid);
-            await deleteAllOwned("lineLinks", user.uid);
+            if (passwordUser) await reauth(current, del.password);
+            await deleteAllOwned("transactions", current.uid);
+            await deleteAllOwned("recurring", current.uid);
+            await deleteAllOwned("lineDrafts", current.uid);
+            await deleteAllOwned("lineLinks", current.uid);
             const batch = writeBatch(db);
-            batch.delete(doc(db, "budgets", user.uid));
-            batch.delete(doc(db, "lineDicts", user.uid));
+            batch.delete(doc(db, "budgets", current.uid));
+            batch.delete(doc(db, "lineDicts", current.uid));
             await batch.commit();
-            await deleteUser(user);
+            await deleteUser(current);
             notify("ลบบัญชีและข้อมูลทั้งหมดแล้ว");
         } catch (err) {
             if (err?.code === "auth/requires-recent-login" && !passwordUser) setNeedsRelogin(true);

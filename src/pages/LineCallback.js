@@ -18,7 +18,7 @@ const localStorageOrNull = () => {
 // /auth/line#token=...&returnTo=...&cn=...  (server ส่งมาหลัง LINE Login สำเร็จ)
 export default function LineCallback() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, refresh } = useAuth();
     const started = useRef(false); // StrictMode เรียก effect สองรอบ -> sign in ครั้งเดียว
     const [target, setTarget] = useState(null);
 
@@ -37,10 +37,13 @@ export default function LineCallback() {
             fail();
             return;
         }
+        // login LINE ซ้ำด้วย uid เดิม onAuthStateChanged ไม่ทำงาน -> refresh ให้ context ได้ผู้ใช้ตัวใหม่
+        // (ไม่งั้นหน้าตั้งค่ายังถือ object เก่าที่ authTime เก่า แล้ววนขอให้ login ใหม่ไม่จบ)
         signInWithCustomToken(auth, token)
+            .then(() => refresh())
             .then(() => setTarget(returnTo))
             .catch(fail);
-    }, [navigate]);
+    }, [navigate, refresh]);
 
     // รอให้ AuthContext เห็นผู้ใช้ก่อน ไม่งั้น PrivateRoute จะเด้งกลับหน้า login
     useEffect(() => {
