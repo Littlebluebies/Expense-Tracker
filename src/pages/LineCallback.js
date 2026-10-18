@@ -29,12 +29,26 @@ export default function LineCallback() {
         // ล้าง token ออกจากแถบ URL/ประวัติทันที
         window.history.replaceState(null, "", window.location.pathname);
         // ยังมีคน login อยู่ (เช่น ยืนยันตัวตนใหม่ก่อนลบบัญชี) -> กลับไปหน้าตั้งค่า
-        const fail = () =>
+        // log แค่เหตุผล (ไม่ log token) ให้ดูใน Console ได้ว่าพังตรงไหน
+        const fail = (reason, err) => {
+            console.error("LINE sign-in failed:", reason, err?.code || err?.message || "");
             navigate(auth.currentUser ? "/settings?line_error=failed" : "/?line_error=failed", { replace: true });
+        };
+        const storage = localStorageOrNull();
+        let hadNonce = false;
+        try {
+            hadNonce = Boolean(storage?.getItem("line_cn"));
+        } catch {
+            hadNonce = false;
+        }
         // token ต้องมาจากการกดปุ่ม LINE ในเบราว์เซอร์นี้เท่านั้น (กันลิงก์ที่คนอื่นส่งมา)
-        const fromThisBrowser = takeLoginNonce(localStorageOrNull(), cn);
-        if (!token || !fromThisBrowser) {
-            fail();
+        const fromThisBrowser = takeLoginNonce(storage, cn);
+        if (!token) {
+            fail("no-token");
+            return;
+        }
+        if (!fromThisBrowser) {
+            fail(hadNonce ? "nonce-mismatch-or-expired" : cn ? "nonce-missing-in-browser" : "nonce-missing-in-hash");
             return;
         }
         // login LINE ซ้ำด้วย uid เดิม onAuthStateChanged ไม่ทำงาน -> refresh ให้ context ได้ผู้ใช้ตัวใหม่
@@ -42,7 +56,7 @@ export default function LineCallback() {
         signInWithCustomToken(auth, token)
             .then(() => refresh())
             .then(() => setTarget(returnTo))
-            .catch(fail);
+            .catch((err) => fail("firebase-sign-in", err));
     }, [navigate, refresh]);
 
     // รอให้ AuthContext เห็นผู้ใช้ก่อน ไม่งั้น PrivateRoute จะเด้งกลับหน้า login
