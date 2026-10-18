@@ -30,12 +30,13 @@ A personal-scale, Thai-language money log built around the month as the unit: pe
 
 ## Capabilities and Constraints
 
-- Routes: `/` login (with password-reset dialog), `/register`, `/dashboard`, `/settings`.
+- Routes: `/` login (LINE button first, then email; password-reset dialog), `/register`, `/auth/line` (finishes LINE sign-in), `/dashboard`, `/settings`.
+- LINE: sign in or link LINE in Settings; a LINE bot logs income/expense from chat (multi-item messages, auto category from a keyword dictionary plus per-user learned words, asks the date before saving, undo, "สรุป" monthly summary, per-user rate limits). Reply messages only (free).
 - Dashboard: month switcher (no future months), offline and unverified-email notices, month balance (income minus expense), month-vs-previous comparison, monthly budget (per-month or default, daily allowance for the current month), add/edit transaction form with quick-add chips, category budgets, recurring items (add, edit, pause, delete), category doughnut, six-month bar chart with budget line (tap a bar to jump to that month), grouped transaction list with filter, search, edit, delete, CSV export.
 - Settings: display name, email verification, change password, export all CSV, sign out, delete account (password plus typed confirmation "ลบบัญชี", online only).
 - Toast at the bottom with an undo action on add and delete.
 - Currency: Thai baht only. All UI copy is Thai; dates via `th-TH` locale.
-- Stack: Create React App, React 19, React Router 7, Bootstrap 5 (must stay), Chart.js via react-chartjs-2, Firebase Auth and Firestore with persistent local cache, App Check.
+- Stack: Create React App, React 19, React Router 7, Bootstrap 5 (must stay), Chart.js via react-chartjs-2, Firebase Auth and Firestore with persistent local cache, App Check, Vercel Functions (ESM, firebase-admin) for LINE Login and the LINE webhook.
 - Content-Security-Policy in `vercel.json` allows styles from `fonts.googleapis.com` and fonts from `fonts.gstatic.com` only (plus self).
 - Vercel builds with `CI=true`; ESLint warnings fail the build.
 - README.md documents UI labels for the try-it guide; renaming those labels means updating the README too.

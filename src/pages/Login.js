@@ -3,10 +3,12 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/aut
 import { CircleCheck, Clock, OctagonAlert } from "lucide-react";
 import { auth } from "../firebase/config";
 import { errorMessage } from "../firebase/errors";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthShell from "../components/AuthShell";
 import Sheet from "../components/Sheet";
+import LineButton from "../components/LineButton";
+import { lineErrorMessage } from "../utils/lineAuth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -15,6 +17,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { expired } = useAuth();
   const id = useId();
+  const [searchParams] = useSearchParams();
+  // กลับจากหน้า LINE แบบไม่สำเร็จ -> callback แนบ ?line_error=... มา
+  const lineError = lineErrorMessage(searchParams.get("line_error"));
 
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
@@ -74,6 +79,18 @@ export default function Login() {
             <span>เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง</span>
           </div>
         )}
+        {!error && !expired && lineError && (
+          <div className="form-error" role="alert">
+            <OctagonAlert size={16} aria-hidden="true" />
+            <span>{lineError}</span>
+          </div>
+        )}
+
+        <LineButton onError={setError} />
+        <p className="muted small mb-0">
+          มีบัญชีอีเมลอยู่แล้ว? เข้าสู่ระบบด้วยอีเมลก่อน แล้วเชื่อม LINE ที่หน้าตั้งค่า
+        </p>
+        <div className="auth-divider">หรือใช้อีเมล</div>
 
         <div>
           <label className="form-label" htmlFor={`${id}-email`}>

@@ -97,9 +97,15 @@ export function AuthProvider({ children }) {
     }, [user]);
 
     // updateProfile / user.reload() แก้ object เดิม ไม่ได้แจ้ง onAuthStateChanged
-    // เรียก refresh() เพื่อให้หน้าจอแสดงชื่อ/สถานะยืนยันอีเมลล่าสุด
+    // signInWithCustomToken ด้วย uid เดิม (login LINE ซ้ำ) ได้ object ใหม่ แต่ก็ไม่แจ้งเพราะ uid ไม่เปลี่ยน
+    // เรียก refresh() เพื่อให้ใช้ผู้ใช้ล่าสุด และหน้าจอแสดงชื่อ/สถานะยืนยันอีเมลล่าสุด
     const refresh = useCallback(async () => {
-        if (auth.currentUser) await auth.currentUser.reload().catch(() => {});
+        const u = auth.currentUser;
+        if (u) {
+            await u.reload().catch(() => {});
+            touchSession(u);
+        }
+        setUser(u);
         setVersion((v) => v + 1);
     }, []);
 

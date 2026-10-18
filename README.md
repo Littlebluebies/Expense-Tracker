@@ -11,7 +11,7 @@
 ## 🚀 เริ่มใช้ใน 3 ขั้นตอน
 
 1. **เปิดลิงก์** [expense-tracker-seven-red-52.vercel.app](https://expense-tracker-seven-red-52.vercel.app/)
-2. **กด "สมัครสมาชิก"** แล้วกรอกชื่อ อีเมล และรหัสผ่าน (อย่างน้อย 6 ตัว)
+2. **กด "เข้าสู่ระบบด้วย LINE"** (แนะนำ จดผ่านแชท LINE ได้ด้วย) หรือ **"สมัครสมาชิก"** ด้วยอีเมลและรหัสผ่าน (อย่างน้อย 6 ตัว)
 3. **เข้าหน้าหลักได้ทันที** ไม่ต้องรอยืนยันอีเมลก่อน
 
 > 💡 แนะนำให้ใช้อีเมลจริง เพราะถ้าลืมรหัสผ่าน ระบบจะส่งลิงก์รีเซ็ตไปที่อีเมลนั้น
@@ -31,6 +31,16 @@
 | 7 | กดไอคอนพระจันทร์ มุมขวาบน | โหมดมืด |
 
 **บนมือถือ:** ลองติดตั้งเป็นแอป (วิธีอยู่ที่[หัวข้อ 10](#10-ติดตั้งเป็นแอปบนมือถือ)) แล้วเปิดโหมดเครื่องบิน แอปจะยังเปิดและจดรายการได้ พอกลับมาออนไลน์ ข้อมูลจะซิงค์ขึ้นไปเอง
+
+## 💬 จดผ่านแชท LINE
+
+1. เข้าสู่ระบบด้วย LINE (หรือ **ตั้งค่า → LINE → เชื่อมบัญชี LINE** ถ้าใช้บัญชีอีเมล) แล้วกดเพิ่มเพื่อนบอท
+2. พิมพ์ในแชทได้เลย ข้อความเดียวมีหลายรายการได้ เช่น `ค่าข้าวตอนกลางวัน 50 บาท ค่าน้ำ 100 บาท ค่าเน็ต 20 บาท`
+3. บอทแสดงรายการพร้อมหมวดที่เดาได้ แล้วถามว่า **เป็นของวันไหน** กด **วันนี้ / เมื่อวาน / เลือกวัน…**
+4. คำที่บอทไม่รู้จัก (เช่น `ค่าแมว 300`) บอทจะให้เลือกหมวด และจำไว้ใช้ครั้งหน้า ถ้าเดาผิด กด **แก้หมวด** ระบบก็จำเหมือนกัน
+5. กด **เลิกทำ** เพื่อลบรายการที่เพิ่งจดจากข้อความนั้น หรือพิมพ์ `สรุป` เพื่อดูยอดเดือนนี้
+
+พิมพ์วันมาด้วยได้ บอทจะบันทึกทันทีไม่ต้องถาม เช่น `เมื่อวาน ค่าแท็กซี่ 120`, `12/10 ค่าข้าว 50`, `12 ต.ค. ค่าข้าว 50`
 
 ## 🔒 ข้อมูลของคุณ
 
@@ -221,11 +231,41 @@ npm run build   # สร้างไฟล์สำหรับขึ้นเ�
 4. คัดลอกค่า config ของเว็บแอปไปใส่ใน [`src/firebase/config.js`](src/firebase/config.js)
 5. **สำคัญ:** คัดลอกเนื้อหาไฟล์ [`firestore.rules`](firestore.rules) ไปวางที่ Firestore → **Rules** แล้วกด **Publish** ไม่อย่างนั้นข้อมูลของผู้ใช้แต่ละคนจะไม่ถูกแยกออกจากกัน
 
+### ตั้งค่า LINE (LINE Login + บอท)
+
+1. **LINE Developers Console** ([developers.line.biz/console](https://developers.line.biz/console/))
+   - สร้าง **Provider** 1 อัน
+   - สร้าง **LINE Login channel** ใต้ Provider นี้ แล้วใส่ Callback URL ทั้ง 3 ตัว: `https://<โดเมน>/api/auth/line/callback`, URL ของ preview (เช่น `https://<โปรเจกต์>-git-<branch>-<ทีม>.vercel.app/api/auth/line/callback`) และ `http://localhost:3000/api/auth/line/callback`
+   - สร้าง **Messaging API channel** ใต้ **Provider เดียวกัน** (ถ้าคนละ Provider ระบบจะไม่รู้ว่าแชทเป็นของบัญชีไหน) ตั้ง Webhook URL เป็น `https://<โดเมน>/api/line/webhook` แล้วเปิด **Use webhook** และออก Channel access token (long-lived)
+   - ที่ LINE Login channel → **Linked LINE Official Account** เลือก OA ของบอท (ต้องผูกถึงจะขึ้นหน้าเพิ่มเพื่อนตอน login)
+2. **LINE Official Account Manager**: ปิด **Auto-reply messages** และ **Greeting messages** ไม่อย่างนั้นจะตอบซ้ำกับบอท
+3. **Firebase Console**:
+   - Project settings → Service accounts → **Generate new private key**
+   - Firestore → Indexes สร้าง composite index 2 ตัว คือ `transactions`: `userId` ↑ `date` ↑ และ `lineDrafts`: `userId` ↑ `expiresAt` ↑
+   - วาง `firestore.rules` ใหม่แล้วกด **Publish** **ก่อน** deploy
+4. **Vercel → Settings → Environment Variables**
+
+| ชื่อ | ค่า |
+|---|---|
+| `LINE_LOGIN_CHANNEL_ID` / `LINE_LOGIN_CHANNEL_SECRET` | จาก LINE Login channel |
+| `LINE_CHANNEL_SECRET` / `LINE_CHANNEL_ACCESS_TOKEN` | จาก Messaging API channel |
+| `FIREBASE_SERVICE_ACCOUNT` | เนื้อหาไฟล์ JSON ของ service account ทั้งไฟล์ |
+| `AUTH_COOKIE_SECRET` | ข้อความสุ่มยาว ๆ เช่น ผลจาก `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
+| `REACT_APP_LINE_ADD_FRIEND_URL` | ลิงก์เพิ่มเพื่อนบอท เช่น `https://line.me/R/ti/p/@xxxx` |
+| `LINE_LIMIT_PER_MINUTE` / `LINE_LIMIT_PER_DAY` | (ไม่ใส่ก็ได้) ค่าเริ่มต้น 20 และ 300 |
+
+**ปรับเกณฑ์จำกัดรายคน:** เปิด Firestore → `lineUsage/{uid}` แล้วเพิ่ม field `limitPerDay` หรือ `limitPerMinute` (ตัวเลข) ใส่ `0` เพื่อระงับการใช้บอทของคนนั้น
+
+**รันบนเครื่องพร้อม `/api`:** `npm start` ไม่มี `/api` ให้ใช้ `npx vercel dev` แทน (ใส่ค่าลับไว้ใน `.env.local`) ถ้าจะลอง webhook บนเครื่อง ต้องเปิด tunnel (เช่น `cloudflared tunnel --url http://localhost:3000`) แล้วชี้ Webhook URL ไปที่ tunnel
+
+**เทสต์:** `npm test` (หน้าเว็บ) และ `npm run test:server` (ฝั่ง server ใช้ `node --test` ต้องใช้ Node 24 ซึ่ง repo ตรึงไว้ใน `.nvmrc` และ `engines` ถ้าใช้ nvm/fnm ให้รัน `nvm use` / `fnm use` ก่อน)
+
 ### นำขึ้นเว็บจริง (Vercel)
 
 1. Push โค้ดขึ้น GitHub
 2. ไปที่ [vercel.com/new](https://vercel.com/new) แล้วเลือก repo นี้ Vercel จะตรวจเจอว่าเป็น Create React App เอง ไม่ต้องตั้งค่าอะไรเพิ่ม แล้วกด **Deploy**
 3. นำโดเมนที่ได้ (เช่น `ชื่อแอป.vercel.app`) ไปเพิ่มที่ Firebase Console → Authentication → Settings → **Authorized domains**
+4. ถ้าเปิดใช้ LINE ให้ทำตามหัวข้อ **ตั้งค่า LINE (LINE Login + บอท)** ด้านบนให้ครบ (Environment Variables, `firestore.rules`, index) ก่อน deploy
 
 หลังจากนั้น ทุกครั้งที่ push ขึ้น branch `main` Vercel จะ deploy ให้อัตโนมัติ
 
@@ -249,7 +289,7 @@ npm run build   # สร้างไฟล์สำหรับขึ้นเ�
 
 ```
 src/
-├── pages/            หน้าหลัก: Login, Register, Dashboard, Settings
+├── pages/            หน้าหลัก: Login, Register, Dashboard, Settings, LineCallback (/auth/line)
 ├── components/       ส่วนประกอบของ Dashboard
 │   ├── MonthCompareCard.js     เทียบรายจ่ายกับเดือนก่อน
 │   ├── BudgetCard.js           งบรวมของเดือน + เงินที่ใช้ได้ต่อวัน
@@ -275,7 +315,12 @@ src/
 ├── context/
 │   ├── AuthContext.js          สถานะการล็อกอิน
 │   └── ToastContext.js         แจ้งเตือนด้านล่างจอ + ปุ่มเลิกทำ
-└── firebase/                   config, ข้อความ error ภาษาไทย, เพิ่ม/ลบรายการแบบเลิกทำได้
+└── firebase/                   config, ข้อความ error ภาษาไทย, เพิ่ม/ลบรายการแบบเลิกทำได้, เริ่ม LINE Login
+api/
+├── auth/line/start.mjs         เริ่ม LINE Login (ส่ง URL + cookie state)
+├── auth/line/callback.mjs      LINE ส่งกลับมา -> หา/สร้าง/ผูกบัญชี -> custom token
+├── line/webhook.mjs            รับข้อความจากบอท LINE
+└── _lib/                       ตรรกะทั้งหมด (parse.mjs แยกข้อความ, bot.mjs ขั้นตอนในแชท, store.mjs Firestore) + เทสต์ *.test.mjs
 public/service-worker.js        ให้เปิดแอปได้ตอนออฟไลน์
 firestore.rules                 กฎความปลอดภัยของ Firestore
 ```
@@ -287,3 +332,7 @@ firestore.rules                 กฎความปลอดภัยของ
 | `transactions/{id}` | รายการรับ-จ่าย: `userId`, `type` (`income`/`expense`), `amount`, `category`, `date`, `note`, `recurringId` (ถ้าลงจากรายการประจำ) |
 | `budgets/{uid}` | งบของผู้ใช้: `budget` (งบเริ่มต้น), `monthly` (งบเฉพาะเดือน เช่น `{"2026-10": 15000}`), `categories` (งบรายหมวด) |
 | `recurring/{id}` | รายการประจำ: `userId`, `type`, `amount`, `category`, `note`, `day`, `startMonth`, `lastPosted`, `active` |
+| `lineLinks/{lineUserId}` | การผูก LINE กับบัญชี: `userId`, `displayName`, `linkedAt` |
+| `lineDicts/{uid}` | คำที่ผู้ใช้สอนบอท: `words` (`{"ค่าแมว": "other"}`) |
+| `lineDrafts/{messageId}` | รายการจากแชทที่รอเลือกวัน/หมวด และ id ของรายการที่บันทึกแล้ว (หมดอายุ 7 วัน) |
+| `lineUsage/{uid}` | ตัวนับจำกัดการใช้บอทต่อนาที/ต่อวัน (หน้าเว็บอ่านไม่ได้) |

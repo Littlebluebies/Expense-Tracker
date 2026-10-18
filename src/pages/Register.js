@@ -6,6 +6,7 @@ import { errorMessage } from "../firebase/errors";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import AuthShell from "../components/AuthShell";
+import LineButton from "../components/LineButton";
 
 export default function Register() {
     const [username, setUsername] = useState("");
@@ -63,6 +64,9 @@ export default function Register() {
                         <span>{error}</span>
                     </div>
                 )}
+
+                <LineButton onError={setError}>สมัครด้วย LINE</LineButton>
+                <div className="auth-divider">หรือสมัครด้วยอีเมล</div>
 
                 <div>
                     <label className="form-label" htmlFor={`${id}-name`}>

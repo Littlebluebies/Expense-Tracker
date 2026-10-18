@@ -33,6 +33,8 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   // ไม่ยุ่งกับ request ข้ามโดเมน (Firebase, Google Fonts ฯลฯ)
   if (url.origin !== self.location.origin) return;
+  // API (LINE Login callback ฯลฯ) ต้องไปถึง server เสมอ ห้ามตอบจากแคช
+  if (url.pathname.startsWith("/api/")) return;
 
   // หน้าเว็บ: ลองเน็ตก่อน (จะได้เวอร์ชันใหม่เสมอ) ออฟไลน์ค่อยใช้ของในแคช
   if (request.mode === "navigate") {
